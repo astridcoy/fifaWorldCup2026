@@ -412,6 +412,77 @@ function buildEquipoCardHTML(flag, name, info) {
     </div>`;
 }
 
+function _setModalBetArea(p) {
+  const abierto    = estaAbierto(p);
+  const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
+  const intentos   = p.intentos || 0;
+  const bloqueado  = yaApostado && intentos >= 2;
+  const betEl      = document.getElementById("modal-bet-area");
+
+  if (abierto && !bloqueado) {
+    const attemptDots = yaApostado ? `
+      <div class="attempt-dots" style="justify-content:center;margin-bottom:.6rem">
+        <span class="adot ${intentos >= 1 ? "used" : ""}"></span>
+        <span class="adot ${intentos >= 2 ? "used" : ""}"></span>
+        <span style="font-size:.7rem;color:var(--text-sub);margin-left:.3rem">${intentos}/2 usados</span>
+      </div>` : "";
+    betEl.innerHTML = `
+      <div class="modal-bet-inner">
+        <span class="modal-bet-label">
+          <i class="bi bi-${yaApostado ? "pencil-fill" : "check-circle"}"></i>
+          ${yaApostado ? "Actualizar apuesta" : "Registrar apuesta"}
+        </span>
+        ${attemptDots}
+        <div class="bet-inputs" style="justify-content:center;gap:1.2rem;margin:.75rem 0">
+          <input type="number" class="bet-input" min="0" max="10"
+            value="${yaApostado ? p.goles_local_apostado : 0}"
+            id="modal-gl-${p.id}"
+            style="width:60px;font-size:1.4rem;text-align:center;padding:.35rem" />
+          <span class="bet-separator" style="font-size:1.4rem;line-height:1">–</span>
+          <input type="number" class="bet-input" min="0" max="10"
+            value="${yaApostado ? p.goles_visita_apostado : 0}"
+            id="modal-gv-${p.id}"
+            style="width:60px;font-size:1.4rem;text-align:center;padding:.35rem" />
+        </div>
+        <button class="btn-fifa-green w-100" id="modal-btn-apostar-${p.id}">
+          <i class="bi bi-${yaApostado ? "pencil" : "check-circle"} me-1"></i>
+          ${yaApostado ? "Actualizar apuesta" : "Apostar"}
+        </button>
+      </div>`;
+    document.getElementById(`modal-btn-apostar-${p.id}`)
+      .addEventListener("click", () => registrarApuestaModal(p.id));
+  } else if (abierto && bloqueado) {
+    betEl.innerHTML = `
+      <div class="modal-bet-inner">
+        <span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span>
+        <div class="modal-bet-score">${p.goles_local_apostado} – ${p.goles_visita_apostado}</div>
+        <div class="attempt-dots" style="justify-content:center;margin-top:.6rem">
+          <span class="adot used"></span><span class="adot used"></span>
+          <span style="font-size:.7rem;color:var(--red);margin-left:.3rem">
+            <i class="bi bi-lock-fill me-1"></i>Límite de 2 intentos alcanzado
+          </span>
+        </div>
+      </div>`;
+  } else if (yaApostado) {
+    const pts = p.finalizado ? calcularPuntosLocal(p) : null;
+    const ptsBadge = pts !== null
+      ? `<span class="pts-badge ${pts===3?"pts-3":pts===1?"pts-1":"pts-0"}" style="font-size:.82rem">${pts===3?"⭐":pts===1?"✓":"✗"} ${pts} pts</span>`
+      : "";
+    betEl.innerHTML = `
+      <div class="modal-bet-inner">
+        <span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span>
+        <div class="modal-bet-score">${p.goles_local_apostado} – ${p.goles_visita_apostado}</div>
+        ${ptsBadge}
+        <span class="modal-intentos"><i class="bi bi-arrow-repeat"></i>${intentos}/2 intentos</span>
+      </div>`;
+  } else {
+    betEl.innerHTML = `
+      <div class="modal-no-bet" style="opacity:.6">
+        <i class="bi bi-slash-circle"></i>No apostaste en este partido
+      </div>`;
+  }
+}
+
 function showModalPartido(p) {
   const abierto    = estaAbierto(p);
   const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
@@ -439,16 +510,7 @@ function showModalPartido(p) {
     const days = Math.floor(diff / 86400000), hours = Math.floor((diff % 86400000) / 3600000), mins = Math.floor((diff % 3600000) / 60000);
     statusEl.innerHTML = `<div class="modal-countdown"><span class="countdown-label">Faltan</span>${days > 0 ? `<span class="countdown-unit">${days}<small>d</small></span>` : ""}${(hours > 0 || days > 0) ? `<span class="countdown-unit">${hours}<small>h</small></span>` : ""}<span class="countdown-unit">${mins}<small>m</small></span></div>`;
   }
-  const betEl = document.getElementById("modal-bet-area");
-  if (yaApostado) {
-    const pts = p.finalizado ? calcularPuntosLocal(p) : null;
-    const ptsBadge = pts !== null ? `<span class="pts-badge ${pts===3?"pts-3":pts===1?"pts-1":"pts-0"}" style="font-size:.82rem">${pts===3?"⭐":pts===1?"✓":"✗"} ${pts} pts</span>` : "";
-    betEl.innerHTML = `<div class="modal-bet-inner"><span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span><div class="modal-bet-score">${p.goles_local_apostado} – ${p.goles_visita_apostado}</div>${ptsBadge}<span class="modal-intentos"><i class="bi bi-arrow-repeat"></i>${intentos}/2 intentos</span></div>`;
-  } else if (abierto) {
-    betEl.innerHTML = `<div class="modal-no-bet"><i class="bi bi-exclamation-circle" style="color:var(--gold)"></i>Aún no apostaste — cierra este modal y usa el formulario en la card.</div>`;
-  } else {
-    betEl.innerHTML = `<div class="modal-no-bet" style="opacity:.6"><i class="bi bi-slash-circle"></i>No apostaste en este partido</div>`;
-  }
+  _setModalBetArea(p);
   const st = getStadiumInfo(p.nombre_estadio);
   const mapsUrl = st?.maps || `https://maps.google.com/?q=${encodeURIComponent(p.nombre_estadio || "FIFA 2026 Stadium")}`;
   document.getElementById("modal-estadio-content").innerHTML = `
@@ -563,6 +625,15 @@ function calcularPuntosLocal(p) {
   return ganReal === ganAp ? 1 : 0;
 }
 
+function _actualizarPartidoLocal(idPartido, gl, gv) {
+  const idx = partidos.findIndex(p => p.id === idPartido);
+  if (idx > -1) {
+    partidos[idx].goles_local_apostado  = gl;
+    partidos[idx].goles_visita_apostado = gv;
+    partidos[idx].intentos = (partidos[idx].intentos || 0) + 1;
+  }
+}
+
 async function registrarApuesta(idPartido) {
   const gl = parseInt(document.getElementById(`gl-${idPartido}`).value);
   const gv = parseInt(document.getElementById(`gv-${idPartido}`).value);
@@ -572,11 +643,38 @@ async function registrarApuesta(idPartido) {
     const data = await res.json();
     if (!res.ok) { toast(data.error || "Error al apostar", "error"); return; }
     toast("✅ Apuesta guardada");
-    const idx = partidos.findIndex(p => p.id === idPartido);
-    if (idx > -1) { partidos[idx].goles_local_apostado = gl; partidos[idx].goles_visita_apostado = gv; partidos[idx].intentos = (partidos[idx].intentos || 0) + 1; }
+    _actualizarPartidoLocal(idPartido, gl, gv);
     renderPartidos();
     updateStatsBar();
+    construirTabs();
   } catch (_) { toast("Error de conexión", "error"); }
+}
+
+async function registrarApuestaModal(idPartido) {
+  const gl = parseInt(document.getElementById(`modal-gl-${idPartido}`)?.value);
+  const gv = parseInt(document.getElementById(`modal-gv-${idPartido}`)?.value);
+  if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) { toast("Marcador inválido", "error"); return; }
+  const btn = document.getElementById(`modal-btn-apostar-${idPartido}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-wc"></span> Guardando...'; }
+  try {
+    const res  = await fetch(`${API}/apostar`, { method: "POST", headers: headers(), body: JSON.stringify({ id_partido: idPartido, goles_local_apostado: gl, goles_visita_apostado: gv }) });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || "Error al apostar", "error");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apostar'; }
+      return;
+    }
+    toast("✅ Apuesta guardada");
+    _actualizarPartidoLocal(idPartido, gl, gv);
+    const pUpd = partidos.find(x => x.id === idPartido);
+    if (pUpd) _setModalBetArea(pUpd);
+    renderPartidos();
+    updateStatsBar();
+    construirTabs();
+  } catch (_) {
+    toast("Error de conexión", "error");
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apostar'; }
+  }
 }
 
 (function() {
