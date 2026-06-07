@@ -401,13 +401,16 @@ def crear_partido():
 @app.route("/admin/partido/<int:partido_id>", methods=["PUT"])
 def editar_partido(partido_id):
     datos = request.get_json()
-    equipo_local  = datos.get("equipo_local", "").strip()
-    equipo_visita = datos.get("equipo_visita", "").strip()
-    fecha         = datos.get("fecha")
-    fase          = datos.get("fase", "Grupos")
+    equipo_local   = datos.get("equipo_local", "").strip()
+    equipo_visita  = datos.get("equipo_visita", "").strip()
+    fecha          = datos.get("fecha")
+    fase           = datos.get("fase", "Grupos")
     bandera_local  = datos.get("bandera_local", "")
     bandera_visita = datos.get("bandera_visita", "")
     grupo          = datos.get("grupo", "")
+    finalizado     = bool(datos.get("finalizado", False))
+    goles_local    = datos.get("goles_local", 0)
+    goles_visita   = datos.get("goles_visita", 0)
 
     if not equipo_local or not equipo_visita or not fecha:
         return jsonify({"error": "Faltan campos obligatorios"}), 400
@@ -419,11 +422,31 @@ def editar_partido(partido_id):
             UPDATE partidos
             SET equipo_local = %s, equipo_visita = %s,
                 bandera_local = %s, bandera_visita = %s,
-                fecha = %s, fase = %s, grupo = %s
+                fecha = %s, fase = %s, grupo = %s,
+                finalizado = %s, goles_local = %s, goles_visita = %s
             WHERE id = %s
-        """, (equipo_local, equipo_visita, bandera_local, bandera_visita, fecha, fase, grupo, partido_id))
+        """, (equipo_local, equipo_visita, bandera_local, bandera_visita,
+              fecha, fase, grupo, finalizado, goles_local, goles_visita, partido_id))
         if cur.rowcount == 0:
             return jsonify({"error": "Partido no encontrado"}), 404
+
+        # Recalcular puntos si el partido quedó finalizado
+        if finalizado:
+            cur.execute("SELECT * FROM apuestas WHERE id_partido = %s", (partido_id,))
+            apuestas = cur.fetchall()
+            ganador_real = "local" if goles_local > goles_visita else ("visita" if goles_visita > goles_local else "empate")
+            for apuesta in apuestas:
+                gl_ap = apuesta["goles_local_apostado"]
+                gv_ap = apuesta["goles_visita_apostado"]
+                ganador_ap = "local" if gl_ap > gv_ap else ("visita" if gv_ap > gl_ap else "empate")
+                if gl_ap == goles_local and gv_ap == goles_visita:
+                    puntos = 3
+                elif ganador_ap == ganador_real:
+                    puntos = 1
+                else:
+                    puntos = 0
+                cur.execute("UPDATE apuestas SET puntos = %s WHERE id = %s", (puntos, apuesta["id"]))
+
         conn.commit()
         cur.close()
         conn.close()

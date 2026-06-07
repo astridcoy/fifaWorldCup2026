@@ -304,6 +304,30 @@
           </select>
         </div>
 
+        <hr style="border-color:rgba(255,255,255,.1);margin:1.2rem 0" />
+
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="edit-finalizado" role="switch" />
+          <label class="form-check-label" for="edit-finalizado" style="color:var(--text-sub)">
+            Partido finalizado
+          </label>
+        </div>
+
+        <div id="wrap-resultado-editar">
+          <label class="form-label mb-2">Marcador final</label>
+          <div class="result-row mb-1">
+            <div>
+              <label class="form-label" style="font-size:.78rem">Local</label>
+              <input type="number" id="edit-goles-local" class="form-control text-center" min="0" max="20" value="0" />
+            </div>
+            <div class="result-sep">–</div>
+            <div>
+              <label class="form-label" style="font-size:.78rem">Visita</label>
+              <input type="number" id="edit-goles-visita" class="form-control text-center" min="0" max="20" value="0" />
+            </div>
+          </div>
+        </div>
+
         <div id="msg-editar" class="mt-3"></div>
       </div>
       <div class="modal-footer">
@@ -531,10 +555,21 @@
     document.getElementById("edit-fecha").value       = p.fecha ? p.fecha.slice(0, 16) : "";
     document.getElementById("edit-fase").value        = p.fase;
     document.getElementById("edit-grupo").value       = p.grupo || "";
+    // Resultado
+    const finalizado = !!p.finalizado;
+    document.getElementById("edit-finalizado").checked      = finalizado;
+    document.getElementById("edit-goles-local").value       = p.goles_local  ?? 0;
+    document.getElementById("edit-goles-visita").value      = p.goles_visita ?? 0;
+    document.getElementById("wrap-resultado-editar").style.display = finalizado ? "" : "none";
     syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
     msgClear("msg-editar");
     modalEditar.show();
   }
+
+  document.getElementById("edit-finalizado").addEventListener("change", () => {
+    document.getElementById("wrap-resultado-editar").style.display =
+      document.getElementById("edit-finalizado").checked ? "" : "none";
+  });
 
   document.getElementById("btn-guardar-editar").addEventListener("click", async () => {
     const id   = document.getElementById("edit-id").value;
@@ -548,13 +583,17 @@
 
     if (!eqL || !eqV || !fech) { msgErr("msg-editar", "Completa los campos obligatorios"); return; }
 
+    const finalizado  = document.getElementById("edit-finalizado").checked;
+    const golesLocal  = parseInt(document.getElementById("edit-goles-local").value)  || 0;
+    const golesVisita = parseInt(document.getElementById("edit-goles-visita").value) || 0;
+
     const btn = document.getElementById("btn-guardar-editar");
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
     try {
       const res  = await fetch(`${API}/admin/partido/${id}`, {
         method: "PUT", headers: headers(),
-        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo })
+        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo, finalizado, goles_local: golesLocal, goles_visita: golesVisita })
       });
       const data = await res.json();
       if (!res.ok) {
