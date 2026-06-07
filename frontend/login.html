@@ -14,7 +14,7 @@
 
   <!-- ══ CAROUSEL PANEL ══ -->
   <div class="auth-split-carousel">
-    <div id="authCarousel" class="carousel slide fifa-carousel" data-bs-ride="carousel" data-bs-interval="4500">
+    <div id="authCarousel" class="carousel slide fifa-carousel">
       <div class="carousel-inner">
 
         <!-- Slide 1 — Logo FIFA 26 (fondo negro) -->
@@ -136,6 +136,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  (function () {
+    const el = document.getElementById("authCarousel");
+    if (el) new bootstrap.Carousel(el, { interval: 4500, wrap: true, ride: "carousel" });
+  })();
+
   const API = "https://polla-api-production.up.railway.app";
   if (localStorage.getItem("token")) window.location.href = "index.html";
 
