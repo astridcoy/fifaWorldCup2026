@@ -39,21 +39,41 @@
 </head>
 <body>
 
+<!-- Sidebar overlay + drawer -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="sidebar-drawer" id="sidebar-drawer">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">JUEGA <span>FIFA</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
+    <button class="sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link"><i class="bi bi-controller"></i> Mis Apuestas</a>
+    <a href="ranking.html" class="sidebar-link active"><i class="bi bi-trophy"></i> Ranking</a>
+    <a href="perfil.html" class="sidebar-link"><i class="bi bi-person-circle"></i> Perfil</a>
+    <div class="sidebar-divider"></div>
+    <a href="admin.html" class="sidebar-link sidebar-link-admin" id="sidebar-admin-link"><i class="bi bi-gear"></i> Panel Admin</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout-btn" id="sidebar-logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
+  </div>
+</div>
+
 <nav class="navbar-wc d-flex align-items-center justify-content-between">
   <a class="navbar-brand-wc" href="index.html">
-    POLLA <span>FIFA WORLD CUP</span> 2026
+    JUEGA <span>FIFA WORLD CUP</span> 2026
     <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
   </a>
   <div class="d-flex align-items-center gap-2">
     <a href="index.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-controller me-1"></i> Mis Apuestas
-
+    </a>
     <a href="perfil.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-person-circle me-1"></i> Perfil
     </a>
-    <button class="btn-danger-sm" id="btn-logout">
+    <button class="btn-danger-sm nav-logout-desktop" id="btn-logout">
       <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
     </button>
+    <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
   </div>
 </nav>
 
@@ -83,6 +103,23 @@
     localStorage.clear();
     window.location.href = "login.html";
   });
+
+  // ── Sidebar móvil ──
+  (function() {
+    const hamburger = document.getElementById("nav-hamburger");
+    const drawer    = document.getElementById("sidebar-drawer");
+    const overlay   = document.getElementById("sidebar-overlay");
+    const closeBtn  = document.getElementById("sidebar-close");
+    const logoutBtn = document.getElementById("sidebar-logout");
+    const adminLink = document.getElementById("sidebar-admin-link");
+    if (localStorage.getItem("rol") === "admin") adminLink.style.display = "flex";
+    function open()  { drawer.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow = "hidden"; }
+    function close() { drawer.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow = ""; }
+    hamburger.addEventListener("click", open);
+    overlay.addEventListener("click", close);
+    closeBtn.addEventListener("click", close);
+    logoutBtn.addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
+  })();
 
   async function cargarRanking() {
     try {
