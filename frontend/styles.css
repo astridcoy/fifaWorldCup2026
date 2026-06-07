@@ -973,7 +973,104 @@ body {
   .btn-danger-sm.nav-logout-desktop { display: none !important; }
 }
 
-/* ── Responsive ── */
+/* ── Responsive — tablet ── */
+@media (max-width: 767px) {
+  .navbar-brand-wc { font-size: 1.25rem; letter-spacing: 1.5px; }
+  .page-header h1  { font-size: 1.75rem; }
+  .admin-card      { padding: 1.1rem; }
+  .ranking-table tbody td { padding: .7rem .75rem; }
+  .ranking-table thead th { padding: .7rem .75rem; font-size: .78rem; }
+  .modal-dialog    { margin: .75rem; }
+}
+
+/* ── Responsive — móvil ── */
+@media (max-width: 575px) {
+  /* Navbar */
+  .navbar-wc { padding: .55rem .85rem; }
+  .navbar-brand-wc { font-size: 1rem; letter-spacing: 1px; }
+  .navbar-hosts { display: none; }
+
+  /* Page */
+  .page-wrap  { padding: .75rem; }
+  .page-header { margin-bottom: 1.25rem; }
+  .page-header h1 { font-size: 1.45rem; }
+  .page-header p  { font-size: .82rem; }
+
+  /* Cards */
+  .admin-card { padding: .9rem; }
+  .admin-card-title { font-size: .9rem; margin-bottom: 1rem; }
+  .match-card { padding: 1rem; }
+  .ranking-card { border-radius: 10px; }
+
+  /* Matches grid */
+  .matches-grid { grid-template-columns: 1fr; gap: .85rem; }
+
+  /* Match card content */
+  .team-flag  { font-size: 1.6rem; }
+  .team-name  { font-size: .82rem; }
+  .result-score { font-size: 1.6rem; }
+  .match-date { font-size: .72rem; }
+
+  /* Bet inputs */
+  .bet-input { width: 54px; height: 42px; font-size: 1.2rem; }
+  .bet-separator { font-size: 1.3rem; }
+
+  /* Phase tabs */
+  .phase-tabs { gap: .35rem; margin-bottom: 1rem; }
+  .phase-tab  { font-size: .75rem; padding: .28rem .75rem; }
+
+  /* Champion card */
+  .campeon-card { flex-direction: column; text-align: center; padding: 1rem; gap: .75rem; }
+  .campeon-trophy { font-size: 2.2rem; }
+  .campeon-controls { justify-content: center; width: 100%; flex-direction: column; }
+  .campeon-controls .form-select,
+  .campeon-controls .btn-fifa-gold { width: 100%; }
+
+  /* Ranking table — hide non-essential columns */
+  .ranking-table .col-exactos,
+  .ranking-table .col-ganador,
+  .ranking-table .col-campeon { display: none; }
+  .ranking-table tbody td { padding: .6rem .65rem; font-size: .85rem; }
+  .ranking-table thead th { padding: .6rem .65rem; font-size: .75rem; }
+  .legend-bar { font-size: .68rem; padding: .6rem .75rem; line-height: 1.5; }
+
+  /* Ranking avatar */
+  .rank-avatar,
+  .rank-avatar-default { width: 36px !important; height: 36px !important; font-size: 1rem !important; margin-right: 7px !important; }
+
+  /* Admin result row */
+  .result-row { grid-template-columns: 1fr 22px 1fr; gap: .5rem; }
+  .result-sep { font-size: 1.3rem; }
+
+  /* Buttons — touch targets */
+  .btn-fifa-green,
+  .btn-fifa-gold  { min-height: 44px; padding: .6rem 1rem; }
+  .btn-fifa-outline { min-height: 42px; padding: .5rem .9rem; }
+  .btn-danger-sm  { min-height: 38px; }
+
+  /* Form controls */
+  .form-control, .form-select { min-height: 44px !important; }
+
+  /* Modals */
+  .modal-dialog { margin: .4rem; }
+  .modal-body   { padding: 1rem; }
+  .modal-header, .modal-footer { padding: .85rem 1rem; }
+
+  /* Admin tables wrapper */
+  .ranking-card > div[style*="overflow-x"] { -webkit-overflow-scrolling: touch; }
+
+  /* Toast — full width on mobile */
+  #toast-container { bottom: .75rem; right: .75rem; left: .75rem; }
+  .toast-wc { min-width: 0; width: 100%; box-sizing: border-box; }
+
+  /* Carousel */
+  .sedes-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-carousel-item { height: 130px; }
+  .hero-carousel-wrap { padding: 0; }
+  .auth-split-carousel { flex: 0 0 52vw; min-height: 52vw; max-height: 55vw; }
+}
+
+/* ── Responsive — desktop legacy ── */
 @media (max-width: 576px) {
   .campeon-card { flex-direction: column; text-align: center; }
   .campeon-controls { justify-content: center; width: 100%; }
