@@ -129,9 +129,12 @@ function construirTabs() {
       p.fase === fase && estaAbierto(p) &&
       (p.goles_local_apostado === null || p.goles_local_apostado === undefined)
     ).length;
+    const badgeVal = fase === "Grupos"
+      ? new Set(partidos.filter(p => p.fase === "Grupos" && p.grupo).map(p => p.grupo)).size
+      : pend;
     const btn = document.createElement("button");
     btn.className = "phase-tab" + (fase === faseActiva ? " active" : "");
-    btn.innerHTML  = fase + (pend > 0 ? ` <span class="tab-badge">${pend}</span>` : "");
+    btn.innerHTML  = fase + (badgeVal > 0 ? ` <span class="tab-badge">${badgeVal}</span>` : "");
     btn.addEventListener("click", () => {
       faseActiva = fase;
       cont.querySelectorAll(".phase-tab:not(.filter-tab)").forEach(b => b.classList.remove("active"));
@@ -199,11 +202,11 @@ function renderGruposAccordion(grid, lista) {
       const isFirst     = idx === 0;
       const pendientes  = ps.filter(p => estaAbierto(p) && (p.goles_local_apostado === null || p.goles_local_apostado === undefined)).length;
       return `
-        <div class="accordion-item" style="background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:.6rem;overflow:hidden">
+        <div class="accordion-item" style="background:var(--card-bg);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:.6rem;overflow:hidden">
           <h2 class="accordion-header">
             <button class="accordion-button ${isFirst ? "" : "collapsed"}" type="button"
               data-bs-toggle="collapse" data-bs-target="#${collapseId}"
-              style="background:var(--card);color:#e8eef7;box-shadow:none;padding:.85rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px">
+              style="background:var(--card-bg);color:#e8eef7;box-shadow:none;padding:.85rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px">
               <i class="bi bi-grid-3x3-gap-fill" style="color:var(--gold);font-size:.9rem"></i>
               ${grupo}
               <span style="font-family:system-ui,sans-serif;font-size:.75rem;font-weight:400;color:var(--text-sub);margin-left:.2rem">${ps.length} partidos</span>
@@ -220,7 +223,7 @@ function renderGruposAccordion(grid, lista) {
         </div>`;
     }).join("");
 
-  grid.innerHTML = featuredHTML + `<div class="accordion accordion-flush" id="${accordionId}">${accordionItems}</div>`;
+  grid.innerHTML = `<div style="grid-column:1/-1;width:100%">${featuredHTML}<div class="accordion accordion-flush" id="${accordionId}">${accordionItems}</div></div>`;
 
   lista.forEach(p => {
     const btn = document.getElementById(`btn-apostar-${p.id}`);

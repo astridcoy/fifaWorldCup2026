@@ -32,6 +32,14 @@
     }
     #accordion-grupos .accordion-button::after { filter: invert(1) brightness(1.5); }
     #accordion-grupos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.06) !important; }
+    #accordion-grupos .accordion-button:focus { box-shadow: none !important; }
+    @media (max-width: 575px) {
+      .grupos-featured-grid,
+      .grupos-mini-grid {
+        grid-template-columns: 1fr;
+        gap: .85rem;
+      }
+    }
   </style>
 </head>
 <body>
