@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polla FIFA 2026 — Panel Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: opacity .15s, transform .1s;
+    }
+    .action-btn:hover { opacity: .85; transform: scale(1.08); }
+    .action-btn-edit   { background: rgba(245,184,0,.15); color: var(--gold); border: 1px solid rgba(245,184,0,.3); }
+    .action-btn-delete { background: rgba(232,25,44,.15);  color: var(--red);  border: 1px solid rgba(232,25,44,.3); }
+    /* Modal overrides */
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--text-main);
+    }
+    .modal-header { border-bottom: 1px solid rgba(255,255,255,.1); }
+    .modal-footer { border-top:    1px solid rgba(255,255,255,.1); }
+    .modal-title  { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--gold); font-size: 1.3rem; }
+    .btn-close-white { filter: invert(1) grayscale(1) brightness(2); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar-wc d-flex align-items-center justify-content-between">
+  <a class="navbar-brand-wc" href="admin.html">
+    POLLA <span>FIFA WORLD CUP</span> 2026
+    <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
+    <span class="badge-admin ms-2">ADMIN</span>
+  </a>
+  <div class="d-flex align-items-center gap-2">
+    <a href="ranking.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-trophy me-1"></i> Ranking
+    </a>
+    <a href="admin.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-trophy me-1"></i> Panel Control
+    </a>
+    <a href="perfil.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-person-circle me-1"></i> Perfil
+    </a>
+    <button class="btn-danger-sm" id="btn-logout">
+      <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <h1><i class="bi bi-gear" style="font-size:1.6rem;vertical-align:middle;margin-right:.4rem;color:var(--gold)"></i>PANEL DE ADMINISTRACIÓN</h1>
+    <p>Crea partidos, ingresa resultados y gestiona la polla.</p>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Crear partido -->
+    <div class="col-lg-6">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <i class="bi bi-plus-circle-fill"></i> Crear partido
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-8">
+            <label class="form-label">Equipo local</label>
+            <input type="text" id="eq-local" class="form-control" placeholder="ej: Brasil" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Bandera</label>
+            <input type="text" id="flag-local" class="form-control" placeholder="🇧🇷" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-8">
+            <label class="form-label">Equipo visita</label>
+            <input type="text" id="eq-visita" class="form-control" placeholder="ej: Argentina" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Bandera</label>
+            <input type="text" id="flag-visita" class="form-control" placeholder="🇦🇷" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Fecha y hora</label>
+          <input type="datetime-local" id="fecha-partido" class="form-control" />
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label"><i class="bi bi-diagram-3 me-1"></i>Fase</label>
+          <select id="fase-partido" class="form-select">
+            <option>Grupos</option>
+            <option>Octavos</option>
+            <option>Cuartos</option>
+            <option>Semifinal</option>
+            <option>Tercer puesto</option>
+            <option>Final</option>
+          </select>
+        </div>
+
+        <div class="mb-4" id="wrap-grupo-crear">
+          <label class="form-label"><i class="bi bi-grid me-1"></i>Grupo</label>
+          <select id="grupo-partido" class="form-select">
+            <option value="">— Sin grupo —</option>
+            <option>Grupo A</option>
+            <option>Grupo B</option>
+            <option>Grupo C</option>
+            <option>Grupo D</option>
+            <option>Grupo E</option>
+            <option>Grupo F</option>
+            <option>Grupo G</option>
+            <option>Grupo H</option>
+            <option>Grupo I</option>
+            <option>Grupo J</option>
+            <option>Grupo K</option>
+            <option>Grupo L</option>
+          </select>
+        </div>
+
+        <button class="btn-fifa-green w-100 py-2" id="btn-crear">
+          <i class="bi bi-plus-lg me-1"></i> Crear partido
+        </button>
+        <div id="msg-crear" class="mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Ingresar resultado -->
+    <div class="col-lg-6">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <i class="bi bi-clipboard-check-fill"></i> Ingresar resultado
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-controller me-1"></i>Partido</label>
+          <select id="sel-partido" class="form-select">
+            <option value="">— Cargando partidos... —</option>
+          </select>
+        </div>
+
+        <label class="form-label mb-2">Marcador final</label>
+        <div class="result-row mb-4">
+          <div>
+            <label class="form-label" style="font-size:.78rem">Local</label>
+            <input type="number" id="res-local" class="form-control text-center" min="0" max="20" value="0" />
+          </div>
+          <div class="result-sep">–</div>
+          <div>
+            <label class="form-label" style="font-size:.78rem">Visita</label>
+            <input type="number" id="res-visita" class="form-control text-center" min="0" max="20" value="0" />
+          </div>
+        </div>
+
+        <button class="btn-fifa-gold w-100 py-2" id="btn-resultado">
+          <i class="bi bi-check2-circle me-1"></i> Registrar resultado
+        </button>
+        <div id="msg-resultado" class="mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Definir campeón real -->
+    <div class="col-12">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <i class="bi bi-trophy-fill" style="color:var(--gold)"></i> Definir campeón del mundial
+        </div>
+        <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:1.25rem">
+          Al confirmar el campeón real, el sistema asignará automáticamente
+          <strong style="color:var(--gold)">5 puntos</strong> a todos los usuarios que acertaron.
+        </p>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-8">
+            <label class="form-label">Campeón real del mundial</label>
+            <input type="text" id="campeon-real" class="form-control" placeholder="ej: 🇦🇷 Argentina" />
+          </div>
+          <div class="col-sm-4">
+            <button class="btn-fifa-gold w-100 py-2" id="btn-campeon-real">
+              <i class="bi bi-trophy me-1"></i> Confirmar campeón
+            </button>
+          </div>
+        </div>
+        <div id="msg-campeon" class="mt-2"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lista de partidos -->
+  <div class="mt-4">
+    <div class="admin-card-title mb-3">
+      <i class="bi bi-list-ul" style="color:var(--gold)"></i> Partidos registrados
+    </div>
+    <div id="lista-partidos">
+      <div class="empty-state">
+        <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
+        <h3 style="margin-top:1rem">Cargando...</h3>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MODAL EDITAR PARTIDO ══ -->
+<div class="modal fade" id="modal-editar" tabindex="-1" aria-labelledby="modal-editar-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-editar-title">
+          <i class="bi bi-pencil-square me-2"></i>Editar partido
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-id" />
+
+        <div class="row g-3 mb-3">
+          <div class="col-8">
+            <label class="form-label">Equipo local</label>
+            <input type="text" id="edit-eq-local" class="form-control" placeholder="ej: Brasil" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Bandera</label>
+            <input type="text" id="edit-flag-local" class="form-control" placeholder="🇧🇷" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-8">
+            <label class="form-label">Equipo visita</label>
+            <input type="text" id="edit-eq-visita" class="form-control" placeholder="ej: Argentina" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Bandera</label>
+            <input type="text" id="edit-flag-visita" class="form-control" placeholder="🇦🇷" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Fecha y hora</label>
+          <input type="datetime-local" id="edit-fecha" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-diagram-3 me-1"></i>Fase</label>
+          <select id="edit-fase" class="form-select">
+            <option>Grupos</option>
+            <option>Octavos</option>
+            <option>Cuartos</option>
+            <option>Semifinal</option>
+            <option>Tercer puesto</option>
+            <option>Final</option>
+          </select>
+        </div>
+
+        <div class="mb-2" id="wrap-grupo-editar">
+          <label class="form-label"><i class="bi bi-grid me-1"></i>Grupo</label>
+          <select id="edit-grupo" class="form-select">
+            <option value="">— Sin grupo —</option>
+            <option>Grupo A</option>
+            <option>Grupo B</option>
+            <option>Grupo C</option>
+            <option>Grupo D</option>
+            <option>Grupo E</option>
+            <option>Grupo F</option>
+            <option>Grupo G</option>
+            <option>Grupo H</option>
+            <option>Grupo I</option>
+            <option>Grupo J</option>
+            <option>Grupo K</option>
+            <option>Grupo L</option>
+          </select>
+        </div>
+
+        <div id="msg-editar" class="mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-fifa-outline" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn-fifa-gold" id="btn-guardar-editar">
+          <i class="bi bi-floppy me-1"></i> Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const API   = "https://polla-api-production.up.railway.app";
+  const TOKEN = localStorage.getItem("token");
+  const ROL   = localStorage.getItem("rol");
+
+  if (!TOKEN || ROL !== "admin") window.location.href = "login.html";
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    localStorage.clear();
+    window.location.href = "login.html";
+  });
+
+  function headers() {
+    return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
+  }
+
+  function toast(msg, tipo = "success") {
+    const t = document.createElement("div");
+    t.className = `toast-wc toast-${tipo}`;
+    t.textContent = msg;
+    document.getElementById("toast-container").appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function msgOk(id, msg) {
+    const el = document.getElementById(id);
+    el.className = "msg-ok";
+    el.innerHTML = `<i class="bi bi-check-circle me-1"></i>${msg}`;
+  }
+  function msgErr(id, msg) {
+    const el = document.getElementById(id);
+    el.className = "msg-err";
+    el.innerHTML = `<i class="bi bi-x-circle me-1"></i>${msg}`;
+  }
+  function msgClear(id) {
+    const el = document.getElementById(id);
+    el.className = "";
+    el.textContent = "";
+  }
+
+  // ── CARGAR PARTIDOS ───────────────────────────────────────
+  let partidos = [];
+  async function cargarPartidos() {
+    try {
+      const res = await fetch(`${API}/partidos`, { headers: headers() });
+      partidos  = await res.json();
+      llenarSelectPartidos();
+      renderListaPartidos();
+    } catch (_) {}
+  }
+
+  function llenarSelectPartidos() {
+    const sel = document.getElementById("sel-partido");
+    sel.innerHTML = '<option value="">— Selecciona un partido —</option>';
+    partidos.filter(p => !p.finalizado).forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = `${p.bandera_local} ${p.equipo_local} vs ${p.bandera_visita} ${p.equipo_visita}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderListaPartidos() {
+    if (!partidos.length) {
+      document.getElementById("lista-partidos").innerHTML =
+        '<div class="empty-state"><span class="empty-icon">📭</span><h3>No hay partidos todavía</h3></div>';
+      return;
+    }
+    const filas = partidos.map(p => `
+      <tr>
+        <td>${p.bandera_local} ${p.equipo_local} <span style="color:var(--text-sub)">vs</span> ${p.bandera_visita} ${p.equipo_visita}</td>
+        <td>
+          <span class="phase-tab active" style="pointer-events:none;padding:.2rem .7rem;font-size:.72rem">${p.fase}</span>
+          ${p.grupo ? `<span style="font-size:.72rem;color:var(--text-sub);margin-left:.3rem">${p.grupo}</span>` : ""}
+        </td>
+        <td style="color:var(--text-sub);font-size:.85rem">${new Date(p.fecha).toLocaleString("es-CL", { timeZone: "America/Santiago" })}</td>
+        <td>${p.finalizado
+          ? `<strong style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px">${p.goles_local} – ${p.goles_visita}</strong>`
+          : '<span style="color:var(--text-sub)"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>'}</td>
+        <td>
+          <button class="action-btn action-btn-edit me-1" onclick="abrirEditar(${p.id})" title="Editar partido">
+            <i class="bi bi-pencil-fill"></i>
+          </button>
+          <button class="action-btn action-btn-delete" onclick="eliminarPartido(${p.id})" title="Eliminar partido">
+            <i class="bi bi-trash-fill"></i>
+          </button>
+        </td>
+      </tr>`).join("");
+
+    document.getElementById("lista-partidos").innerHTML = `
+      <div class="ranking-card">
+        <div style="overflow-x:auto">
+          <table class="ranking-table">
+            <thead><tr><th>Partido</th><th>Fase</th><th>Fecha</th><th>Resultado</th><th style="text-align:center">Acciones</th></tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  // Mostrar grupo solo cuando fase = Grupos
+  function syncGrupoVisibility(faseId, wrapId) {
+    const fase = document.getElementById(faseId).value;
+    document.getElementById(wrapId).style.display = fase === "Grupos" ? "" : "none";
+  }
+  document.getElementById("fase-partido").addEventListener("change", () => syncGrupoVisibility("fase-partido", "wrap-grupo-crear"));
+  document.getElementById("edit-fase").addEventListener("change",    () => syncGrupoVisibility("edit-fase",    "wrap-grupo-editar"));
+  syncGrupoVisibility("fase-partido", "wrap-grupo-crear");
+
+  // ── CREAR ─────────────────────────────────────────────────
+  document.getElementById("btn-crear").addEventListener("click", async () => {
+    const eqL  = document.getElementById("eq-local").value.trim();
+    const eqV  = document.getElementById("eq-visita").value.trim();
+    const flL  = document.getElementById("flag-local").value.trim();
+    const flV  = document.getElementById("flag-visita").value.trim();
+    const fech = document.getElementById("fecha-partido").value;
+    const fase = document.getElementById("fase-partido").value;
+    const grupo = fase === "Grupos" ? document.getElementById("grupo-partido").value : "";
+
+    if (!eqL || !eqV || !fech) { msgErr("msg-crear", "Completa los campos obligatorios"); return; }
+
+    try {
+      const res  = await fetch(`${API}/admin/partido`, {
+        method: "POST", headers: headers(),
+        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo })
+      });
+      const data = await res.json();
+      if (!res.ok) { msgErr("msg-crear", data.error); return; }
+      msgOk("msg-crear", "Partido creado correctamente");
+      toast("✅ Partido creado");
+      // Limpiar formulario
+      ["eq-local","eq-visita","flag-local","flag-visita","fecha-partido"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+      cargarPartidos();
+    } catch (_) { msgErr("msg-crear", "Error de conexión"); }
+  });
+
+  // ── EDITAR ────────────────────────────────────────────────
+  let modalEditar;
+  document.addEventListener("DOMContentLoaded", () => {
+    modalEditar = new bootstrap.Modal(document.getElementById("modal-editar"));
+  });
+
+  function abrirEditar(id) {
+    const p = partidos.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById("edit-id").value          = p.id;
+    document.getElementById("edit-eq-local").value    = p.equipo_local;
+    document.getElementById("edit-eq-visita").value   = p.equipo_visita;
+    document.getElementById("edit-flag-local").value  = p.bandera_local  || "";
+    document.getElementById("edit-flag-visita").value = p.bandera_visita || "";
+    document.getElementById("edit-fecha").value       = p.fecha ? p.fecha.slice(0, 16) : "";
+    document.getElementById("edit-fase").value        = p.fase;
+    document.getElementById("edit-grupo").value       = p.grupo || "";
+    syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
+    msgClear("msg-editar");
+    modalEditar.show();
+  }
+
+  document.getElementById("btn-guardar-editar").addEventListener("click", async () => {
+    const id   = document.getElementById("edit-id").value;
+    const eqL  = document.getElementById("edit-eq-local").value.trim();
+    const eqV  = document.getElementById("edit-eq-visita").value.trim();
+    const flL  = document.getElementById("edit-flag-local").value.trim();
+    const flV  = document.getElementById("edit-flag-visita").value.trim();
+    const fech = document.getElementById("edit-fecha").value;
+    const fase = document.getElementById("edit-fase").value;
+    const grupo = fase === "Grupos" ? document.getElementById("edit-grupo").value : "";
+
+    if (!eqL || !eqV || !fech) { msgErr("msg-editar", "Completa los campos obligatorios"); return; }
+
+    const btn = document.getElementById("btn-guardar-editar");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
+    try {
+      const res  = await fetch(`${API}/admin/partido/${id}`, {
+        method: "PUT", headers: headers(),
+        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const errMsg = data.error || `Error ${res.status}`;
+        msgErr("msg-editar", errMsg);
+        toast(errMsg, "error");
+        return;
+      }
+      toast("✅ Partido actualizado");
+      modalEditar.hide();
+      cargarPartidos();
+    } catch (e) {
+      const errMsg = "Error de conexión: " + e.message;
+      msgErr("msg-editar", errMsg);
+      toast(errMsg, "error");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar cambios';
+    }
+  });
+
+  // ── ELIMINAR ──────────────────────────────────────────────
+  async function eliminarPartido(id) {
+    const p = partidos.find(x => x.id === id);
+    if (!p) return;
+    const ok = confirm(
+      `¿Eliminar "${p.equipo_local} vs ${p.equipo_visita}"?\n` +
+      `Se eliminarán también todas las apuestas asociadas. Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+
+    try {
+      const res  = await fetch(`${API}/admin/partido/${id}`, {
+        method: "DELETE", headers: headers()
+      });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || `Error ${res.status}`, "error"); return; }
+      toast("🗑️ Partido eliminado");
+      cargarPartidos();
+    } catch (e) {
+      toast("Error de conexión: " + e.message, "error");
+    }
+  }
+
+  // ── RESULTADO ─────────────────────────────────────────────
+  document.getElementById("btn-resultado").addEventListener("click", async () => {
+    const idPartido = document.getElementById("sel-partido").value;
+    const gl = parseInt(document.getElementById("res-local").value);
+    const gv = parseInt(document.getElementById("res-visita").value);
+
+    if (!idPartido) { msgErr("msg-resultado", "Selecciona un partido"); return; }
+
+    const confirmar = confirm(`¿Confirmas el resultado ${gl} - ${gv}?\nEsta acción calculará los puntos de todos los usuarios.`);
+    if (!confirmar) return;
+
+    try {
+      const res  = await fetch(`${API}/admin/resultado/${idPartido}`, {
+        method: "PUT", headers: headers(),
+        body: JSON.stringify({ goles_local: gl, goles_visita: gv })
+      });
+      const data = await res.json();
+      if (!res.ok) { msgErr("msg-resultado", data.error); return; }
+      msgOk("msg-resultado", "Resultado ingresado y puntos calculados");
+      toast("✅ Resultado registrado");
+      cargarPartidos();
+    } catch (_) { msgErr("msg-resultado", "Error de conexión"); }
+  });
+
+  // ── CAMPEÓN REAL ──────────────────────────────────────────
+  document.getElementById("btn-campeon-real").addEventListener("click", async () => {
+    const campeon = document.getElementById("campeon-real").value.trim();
+    if (!campeon) { msgErr("msg-campeon", "Ingresa el nombre del campeón"); return; }
+
+    const confirmar = confirm(`¿Confirmas que el campeón es "${campeon}"?\nSe asignarán 5 puntos a quienes lo acertaron.`);
+    if (!confirmar) return;
+
+    try {
+      const res  = await fetch(`${API}/admin/campeon-real`, {
+        method: "PUT", headers: headers(),
+        body: JSON.stringify({ campeon })
+      });
+      const data = await res.json();
+      if (!res.ok) { msgErr("msg-campeon", data.error); return; }
+      msgOk("msg-campeon", data.mensaje);
+      toast("🏆 Campeón registrado");
+    } catch (_) { msgErr("msg-campeon", "Error de conexión"); }
+  });
+
+  cargarPartidos();
+</script>
+</body>
+</html>

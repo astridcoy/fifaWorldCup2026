@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polla FIFA WORLD CUP 2026 — Iniciar sesión</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="auth-split">
+
+  <!-- ══ CAROUSEL PANEL ══ -->
+  <div class="auth-split-carousel">
+    <div id="authCarousel" class="carousel slide fifa-carousel" data-bs-ride="carousel" data-bs-interval="4500">
+      <div class="carousel-inner">
+
+        <!-- Slide 1 — Logo FIFA 26 (fondo negro) -->
+        <div class="carousel-item active">
+          <div class="carousel-slide-img">
+            <img src="img/fifa3.png" alt="FIFA World Cup 2026" />
+            <div class="slide-overlay" style="background:linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.1) 60%, transparent 100%)">
+              <span class="slide-overlay-badge">FIFA WORLD CUP™</span>
+              <h2 class="slide-overlay-title"><span>2026</span></h2>
+              <p class="slide-overlay-sub">Only Forward · Solo Hacia Adelante</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2 — Mapa de sedes -->
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/host-map.jpg" alt="Sedes FIFA 2026" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">16 SEDES OFICIALES</span>
+              <h2 class="slide-overlay-title">NORTE<br><span>AMÉRICA</span></h2>
+              <p class="slide-overlay-sub">🇺🇸 USA · 🇨🇦 Canadá · 🇲🇽 México</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3 — Host cities list -->
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/host-cities.jpg" alt="Host Cities FIFA 2026" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">FIFA WORLD CUP™ 2026</span>
+              <h2 class="slide-overlay-title">HOST<br><span>CITIES</span></h2>
+              <p class="slide-overlay-sub">48 equipos · 104 partidos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 4 — Canadá (Vancouver / Toronto) -->
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/canada-cities.jpg" alt="Vancouver y Toronto" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">CANADÁ 🇨🇦</span>
+              <h2 class="slide-overlay-title">VANCOUVER<br><span>TORONTO</span></h2>
+              <p class="slide-overlay-sub">FIFA World Cup 2026™ Host Cities</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 5 — Logo FIFA 26 (fondo blanco / gris) -->
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/fifa-logo-light.jpg" alt="FIFA 2026 Logo" style="object-position:center center" />
+            <div class="slide-overlay" style="background:linear-gradient(to top, rgba(0,0,0,.6) 0%, transparent 50%)">
+              <span class="slide-overlay-badge">APUESTA AHORA</span>
+              <h2 class="slide-overlay-title" style="color:#111;text-shadow:none">¡ÚNETE A<br><span>LA POLLA!</span></h2>
+              <p class="slide-overlay-sub" style="color:rgba(0,0,0,.7)">Predice los marcadores y gana</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /carousel-inner -->
+
+      <button class="carousel-control-prev" type="button" data-bs-target="#authCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#authCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+      <div class="carousel-indicators" style="margin-bottom:.5rem">
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="2"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="3"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="4"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FORM PANEL ══ -->
+  <div class="auth-split-form">
+    <div class="auth-card w-100" style="max-width:380px">
+      <div class="auth-logo">
+        <span class="trophy">🏆</span>
+        <h1>POLLA <span>FIFA WORLD CUP</span> 2026</h1>
+        <p>Ingresa a tu cuenta para apostar</p>
+      </div>
+
+      <div id="error-msg" class="alert-wc"></div>
+
+      <div class="mb-3">
+        <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
+        <input type="email" id="email" class="form-control" placeholder="tu@correo.com" autocomplete="email" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label"><i class="bi bi-lock me-1"></i>Contraseña</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <button class="btn-fifa-green w-100 py-2" id="btn-login">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
+      </button>
+
+      <div class="auth-footer mt-3">
+        ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+      </div>
+      <div class="auth-footer mt-2">
+        <a href="recuperar-password.html" style="color:var(--text-sub);font-size:.82rem">
+          <i class="bi bi-key me-1"></i>¿Olvidaste tu contraseña?
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const API = "https://polla-api-production.up.railway.app";
+  if (localStorage.getItem("token")) window.location.href = "index.html";
+
+  const btnLogin = document.getElementById("btn-login");
+  const errorMsg = document.getElementById("error-msg");
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function mostrarError(msg) { errorMsg.textContent = msg; errorMsg.classList.add("visible"); }
+  document.querySelectorAll("input").forEach(i => i.addEventListener("input", () => {
+    errorMsg.classList.remove("visible");
+    i.classList.remove("is-invalid");
+  }));
+  document.getElementById("email").addEventListener("blur", function () {
+    if (this.value && !EMAIL_RE.test(this.value.trim()))
+      this.classList.add("is-invalid");
+  });
+  document.getElementById("password").addEventListener("keydown", e => { if (e.key === "Enter") btnLogin.click(); });
+
+  btnLogin.addEventListener("click", async () => {
+    const emailEl = document.getElementById("email");
+    const pwEl    = document.getElementById("password");
+    const email   = emailEl.value.trim();
+    const password = pwEl.value;
+
+    emailEl.classList.remove("is-invalid");
+    pwEl.classList.remove("is-invalid");
+
+    let ok = true;
+    if (!email) { emailEl.classList.add("is-invalid"); ok = false; }
+    else if (!EMAIL_RE.test(email)) {
+      emailEl.classList.add("is-invalid");
+      mostrarError("Ingresa un correo electrónico válido.");
+      ok = false;
+    }
+    if (!password) { pwEl.classList.add("is-invalid"); ok = false; }
+    if (!ok) { if (!email || EMAIL_RE.test(email)) mostrarError("Por favor completa todos los campos."); return; }
+
+    btnLogin.disabled = true;
+    btnLogin.innerHTML = '<span class="spinner-wc"></span> Verificando...';
+    try {
+      const res  = await fetch(`${API}/login`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { mostrarError(data.error || "Error al iniciar sesión."); return; }
+      localStorage.setItem("token",  data.token);
+      localStorage.setItem("nombre", data.nombre);
+      localStorage.setItem("rol",    data.rol);
+      localStorage.setItem("id",     data.id);
+      window.location.href = data.rol === "admin" ? "admin.html" : "index.html";
+    } catch (_) {
+      mostrarError("No se pudo conectar con el servidor.");
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Ingresar al Mundial';
+    }
+  });
+</script>
+</body>
+</html>

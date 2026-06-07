@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polla FIFA 2026 — Mi Perfil</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .perfil-avatar-wrap {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 1.25rem;
+    }
+    .perfil-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--gold);
+      background: var(--card-bg);
+    }
+    .perfil-avatar-default {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 3px solid var(--gold);
+      background: var(--card-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--gold);
+    }
+    .perfil-avatar-btn {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #000;
+      font-size: .85rem;
+      transition: transform .15s;
+    }
+    .perfil-avatar-btn:hover { transform: scale(1.1); }
+    .btn-delete-foto {
+      background: none;
+      border: none;
+      color: #E8192C;
+      font-size: .78rem;
+      padding: 0;
+      cursor: pointer;
+      margin-top: .1rem;
+    }
+    .btn-delete-foto:hover { text-decoration: underline; }
+    .pw-strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      transition: width .3s, background .3s;
+      margin-top: .35rem;
+    }
+    .pw-strength-label {
+      font-size: .75rem;
+      margin-top: .2rem;
+    }
+    .field-hint { font-size: .76rem; color: var(--text-sub); margin-top: .25rem; }
+    .section-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.08);
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar-wc d-flex align-items-center justify-content-between">
+  <a class="navbar-brand-wc" href="index.html">
+    POLLA <span>FIFA</span> 2026
+    <span class="navbar-hosts">
+      <span class="hflag" title="USA">🇺🇸</span>
+      <span class="hflag" title="Canada">🇨🇦</span>
+      <span class="hflag" title="México">🇲🇽</span>
+    </span>
+  </a>
+  <div class="d-flex align-items-center gap-2">
+    <a href="ranking.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-trophy me-1"></i> Ranking
+    </a>
+    <a href="index.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-soccer-ball me-1"></i> Apuestas
+    </a>
+    <button class="btn-danger-sm" id="btn-logout">
+      <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-wrap" style="max-width:560px">
+
+  <div class="page-header">
+    <h1><i class="bi bi-person-circle" style="font-size:1.6rem;vertical-align:middle;margin-right:.4rem;color:var(--gold)"></i>MI PERFIL</h1>
+    <p>Actualiza tu información y foto de perfil.</p>
+  </div>
+
+  <div class="admin-card">
+
+    <!-- Foto de perfil -->
+    <div class="text-center mb-1">
+      <div class="perfil-avatar-wrap" id="avatar-wrap">
+        <div class="perfil-avatar-default" id="avatar-default"><i class="bi bi-person-fill"></i></div>
+        <img id="avatar-img" class="perfil-avatar d-none" src="" alt="Foto de perfil" />
+        <button class="perfil-avatar-btn" id="btn-foto" title="Cambiar foto">
+          <i class="bi bi-camera-fill"></i>
+        </button>
+      </div>
+      <input type="file" id="input-foto" accept="image/*" style="display:none" />
+      <p class="field-hint">Haz clic en la cámara para cambiar tu foto (máx. 2 MB)</p>
+      <button class="btn-delete-foto d-none" id="btn-delete-foto">
+        <i class="bi bi-trash me-1"></i>Eliminar foto
+      </button>
+    </div>
+
+    <hr class="section-divider" />
+
+    <div id="msg-perfil" class="alert-wc mb-3"></div>
+    <div id="msg-ok" class="msg-ok d-none mb-3"></div>
+
+    <!-- Nombre -->
+    <div class="mb-3">
+      <label class="form-label"><i class="bi bi-person me-1"></i>Nombre</label>
+      <input type="text" id="p-nombre" class="form-control" placeholder="Tu nombre completo" autocomplete="name" />
+      <div class="invalid-feedback">El nombre debe tener entre 2 y 80 caracteres.</div>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-3">
+      <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
+      <input type="email" id="p-email" class="form-control" placeholder="tu@correo.com" autocomplete="email" />
+      <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
+    </div>
+
+    <hr class="section-divider" />
+    <p style="color:var(--text-sub);font-size:.82rem;margin-bottom:1rem">
+      <i class="bi bi-shield-lock me-1"></i>Deja los campos de contraseña en blanco si no deseas cambiarla.
+    </p>
+
+    <!-- Contraseña nueva -->
+    <div class="mb-3">
+      <label class="form-label"><i class="bi bi-lock me-1"></i>Nueva contraseña</label>
+      <div class="input-group" id="pw-group">
+        <input type="password" id="p-password" class="form-control" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+        <button class="btn btn-outline-secondary" type="button" id="toggle-pw" tabindex="-1" style="border-color:rgba(255,255,255,.15);background:transparent;color:var(--text-sub)">
+          <i class="bi bi-eye" id="eye-icon"></i>
+        </button>
+        <div class="invalid-feedback" id="pw-invalid">Mín. 8 caracteres, una mayúscula, una minúscula y un número.</div>
+      </div>
+      <div class="pw-strength-bar" id="pw-bar" style="width:0;background:transparent"></div>
+      <div class="pw-strength-label" id="pw-label"></div>
+      <div class="field-hint">Mín. 8 caracteres, mayúscula, minúscula y número.</div>
+    </div>
+
+    <!-- Confirmar contraseña -->
+    <div class="mb-4">
+      <label class="form-label"><i class="bi bi-lock-fill me-1"></i>Confirmar contraseña</label>
+      <input type="password" id="p-confirmar" class="form-control" placeholder="Repite la nueva contraseña" autocomplete="new-password" />
+      <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+    </div>
+
+    <button class="btn-fifa-gold w-100 py-2" id="btn-guardar">
+      <i class="bi bi-floppy me-1"></i> Guardar cambios
+    </button>
+
+  </div>
+
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API    = "https://polla-api-production.up.railway.app";
+const TOKEN  = localStorage.getItem("token");
+if (!TOKEN) window.location.href = "login.html";
+
+document.getElementById("btn-logout").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+});
+
+function toast(msg, tipo = "success") {
+  const t = document.createElement("div");
+  t.className = `toast-wc toast-${tipo}`;
+  t.textContent = msg;
+  document.getElementById("toast-container").appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function headers() {
+  return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
+}
+
+// ── Foto de perfil ──────────────────────────────────────────
+let fotoBase64       = null;   // nueva foto elegida (base64)
+let pendingDeleteFoto = false; // si el usuario quiere borrar la foto actual
+
+const inputFoto   = document.getElementById("input-foto");
+const avatarImg   = document.getElementById("avatar-img");
+const avatarDef   = document.getElementById("avatar-default");
+const btnDelFoto  = document.getElementById("btn-delete-foto");
+
+function mostrarFoto(src) {
+  avatarImg.src = src;
+  avatarImg.classList.remove("d-none");
+  avatarDef.classList.add("d-none");
+  btnDelFoto.classList.remove("d-none");
+}
+
+function ocultarFoto() {
+  avatarImg.src = "";
+  avatarImg.classList.add("d-none");
+  avatarDef.classList.remove("d-none");
+  btnDelFoto.classList.add("d-none");
+}
+
+document.getElementById("btn-foto").addEventListener("click", () => inputFoto.click());
+
+inputFoto.addEventListener("change", () => {
+  const file = inputFoto.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    toast("La imagen no debe superar 2 MB", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    fotoBase64 = e.target.result;
+    pendingDeleteFoto = false;
+    mostrarFoto(fotoBase64);
+  };
+  reader.readAsDataURL(file);
+});
+
+btnDelFoto.addEventListener("click", () => {
+  fotoBase64 = null;
+  pendingDeleteFoto = true;
+  ocultarFoto();
+  inputFoto.value = "";
+});
+
+// ── Mostrar/ocultar contraseña ──────────────────────────────
+document.getElementById("toggle-pw").addEventListener("click", () => {
+  const inp  = document.getElementById("p-password");
+  const icon = document.getElementById("eye-icon");
+  const show = inp.type === "password";
+  inp.type = show ? "text" : "password";
+  icon.className = show ? "bi bi-eye-slash" : "bi bi-eye";
+});
+
+// ── Medidor de fuerza de contraseña ─────────────────────────
+function medirFuerza(pw) {
+  if (!pw) return { score: 0, label: "", color: "transparent" };
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw))    score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const labels = ["", "Muy débil", "Débil", "Regular", "Fuerte", "Muy fuerte"];
+  const colors = ["transparent", "#E8192C", "#ff6b35", "#F5B800", "#00843D", "#00843D"];
+  return { score, label: labels[score], color: colors[score] };
+}
+
+document.getElementById("p-password").addEventListener("input", function () {
+  const { score, label, color } = medirFuerza(this.value);
+  const bar = document.getElementById("pw-bar");
+  bar.style.width = this.value ? `${score * 20}%` : "0";
+  bar.style.background = color;
+  document.getElementById("pw-label").textContent = label;
+  document.getElementById("pw-label").style.color = color;
+});
+
+// ── Validaciones ─────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validarEmail(val) {
+  return EMAIL_RE.test(val);
+}
+
+function validarPassword(val) {
+  return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /\d/.test(val);
+}
+
+function setValidez(id, ok) {
+  const el = document.getElementById(id);
+  el.classList.toggle("is-valid",   ok);
+  el.classList.toggle("is-invalid", !ok);
+}
+
+function clearValidez(...ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove("is-valid", "is-invalid");
+  });
+}
+
+document.getElementById("p-nombre").addEventListener("input", function () {
+  const ok = this.value.trim().length >= 2 && this.value.trim().length <= 80;
+  setValidez("p-nombre", ok);
+});
+
+document.getElementById("p-email").addEventListener("input", function () {
+  setValidez("p-email", validarEmail(this.value.trim()));
+});
+
+document.getElementById("p-confirmar").addEventListener("input", function () {
+  const pw = document.getElementById("p-password").value;
+  if (this.value || pw) setValidez("p-confirmar", this.value === pw);
+});
+
+// ── Cargar perfil ─────────────────────────────────────────────
+async function cargarPerfil() {
+  try {
+    const res  = await fetch(`${API}/perfil`, { headers: headers() });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || "Error al cargar perfil", "error"); return; }
+
+    document.getElementById("p-nombre").value = data.nombre || "";
+    document.getElementById("p-email").value  = data.email  || "";
+
+    if (data.foto_perfil) {
+      mostrarFoto(data.foto_perfil);
+    }
+  } catch (_) {
+    toast("Error de conexión", "error");
+  }
+}
+
+// ── Guardar perfil ────────────────────────────────────────────
+document.getElementById("btn-guardar").addEventListener("click", async () => {
+  const nombre    = document.getElementById("p-nombre").value.trim();
+  const email     = document.getElementById("p-email").value.trim();
+  const password  = document.getElementById("p-password").value;
+  const confirmar = document.getElementById("p-confirmar").value;
+
+  clearValidez("p-nombre", "p-email", "p-password", "p-confirmar");
+
+  let ok = true;
+
+  if (!nombre || nombre.length < 2 || nombre.length > 80) {
+    setValidez("p-nombre", false); ok = false;
+  }
+  if (!validarEmail(email)) {
+    setValidez("p-email", false); ok = false;
+  }
+  if (password) {
+    if (!validarPassword(password)) {
+      document.getElementById("pw-group").classList.add("is-invalid");
+      setValidez("p-password", false);
+      ok = false;
+    } else {
+      document.getElementById("pw-group").classList.remove("is-invalid");
+    }
+    if (password !== confirmar) {
+      setValidez("p-confirmar", false); ok = false;
+    }
+  } else {
+    document.getElementById("pw-group").classList.remove("is-invalid");
+  }
+
+  if (!ok) return;
+
+  const body = { nombre, email };
+  if (password)          body.password    = password;
+  if (fotoBase64)        body.foto_perfil = fotoBase64;
+  else if (pendingDeleteFoto) body.foto_perfil = null;
+
+  const btn = document.getElementById("btn-guardar");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
+
+  try {
+    const res  = await fetch(`${API}/perfil`, {
+      method: "PUT", headers: headers(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || "Error al guardar", "error"); return; }
+
+    toast("✅ Perfil actualizado");
+    localStorage.setItem("nombre", nombre);
+
+    // Limpiar campos de contraseña
+    document.getElementById("p-password").value  = "";
+    document.getElementById("p-confirmar").value = "";
+    document.getElementById("pw-bar").style.width = "0";
+    document.getElementById("pw-label").textContent = "";
+    fotoBase64 = null;
+    pendingDeleteFoto = false;
+    clearValidez("p-nombre", "p-email", "p-password", "p-confirmar");
+  } catch (_) {
+    toast("Error de conexión", "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar cambios';
+  }
+});
+
+cargarPerfil();
+</script>
+</body>
+</html>

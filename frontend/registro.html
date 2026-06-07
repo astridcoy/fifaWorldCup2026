@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polla FIFA WORLD CUP 2026 — Registro</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="auth-split">
+
+  <!-- ══ CAROUSEL PANEL ══ -->
+  <div class="auth-split-carousel">
+    <div id="authCarousel" class="carousel slide fifa-carousel" data-bs-ride="carousel" data-bs-interval="4500">
+      <div class="carousel-inner">
+
+        <div class="carousel-item active">
+          <div class="carousel-slide-img">
+            <img src="img/host-map.jpg" alt="Sedes FIFA 2026" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">16 SEDES OFICIALES</span>
+              <h2 class="slide-overlay-title">NORTE<br><span>AMÉRICA</span></h2>
+              <p class="slide-overlay-sub">🇺🇸 USA · 🇨🇦 Canadá · 🇲🇽 México</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/canada-cities.jpg" alt="Vancouver y Toronto" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">CANADÁ 🇨🇦</span>
+              <h2 class="slide-overlay-title">VANCOUVER<br><span>TORONTO</span></h2>
+              <p class="slide-overlay-sub">FIFA World Cup 2026™ Host Cities</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/host-cities.jpg" alt="Host Cities" />
+            <div class="slide-overlay">
+              <span class="slide-overlay-badge">FIFA WORLD CUP™ 2026</span>
+              <h2 class="slide-overlay-title">HOST<br><span>CITIES</span></h2>
+              <p class="slide-overlay-sub">48 equipos · 104 partidos</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item">
+          <div class="carousel-slide-img">
+            <img src="img/fifa-logo-light.jpg" alt="FIFA 2026" />
+            <div class="slide-overlay" style="background:linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.1) 60%, transparent 100%)">
+              <span class="slide-overlay-badge">FIFA WORLD CUP™</span>
+              <h2 class="slide-overlay-title"><span>2026</span></h2>
+              <p class="slide-overlay-sub">Only Forward · Solo Hacia Adelante</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#authCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#authCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+      <div class="carousel-indicators" style="margin-bottom:.5rem">
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="2"></button>
+        <button type="button" data-bs-target="#authCarousel" data-bs-slide-to="3"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FORM PANEL ══ -->
+  <div class="auth-split-form">
+    <div class="auth-card w-100" style="max-width:380px">
+      <div class="auth-logo">
+        <span class="trophy">⚽</span>
+        <h1>ÚNETE A LA <span>POLLA</span></h1>
+        <p>Crea tu cuenta y empieza a apostar</p>
+      </div>
+
+      <div id="error-msg" class="alert-wc"></div>
+
+      <div class="mb-3">
+        <label class="form-label"><i class="bi bi-person me-1"></i>Nombre</label>
+        <input type="text" id="nombre" class="form-control" placeholder="Tu nombre completo" autocomplete="name" />
+        <div class="invalid-feedback">Ingresa tu nombre (2–80 caracteres).</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
+        <input type="email" id="email" class="form-control" placeholder="tu@correo.com" autocomplete="email" />
+        <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label"><i class="bi bi-lock me-1"></i>Contraseña</label>
+        <div class="input-group" id="pw-group">
+          <input type="password" id="password" class="form-control" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+          <button class="btn btn-outline-secondary" type="button" id="toggle-pw" tabindex="-1" style="border-color:rgba(255,255,255,.15);background:transparent;color:var(--text-sub)">
+            <i class="bi bi-eye" id="eye-icon"></i>
+          </button>
+          <div class="invalid-feedback" id="pw-invalid">Mín. 8 caracteres, una mayúscula, una minúscula y un número.</div>
+        </div>
+        <div class="pw-strength-bar" id="pw-bar" style="height:4px;border-radius:2px;transition:width .3s,background .3s;margin-top:.35rem;width:0;background:transparent"></div>
+        <div id="pw-label" style="font-size:.75rem;margin-top:.2rem"></div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label"><i class="bi bi-lock-fill me-1"></i>Confirmar contraseña</label>
+        <input type="password" id="confirmar" class="form-control" placeholder="Repite tu contraseña" autocomplete="new-password" />
+        <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+      </div>
+
+      <button class="btn-fifa-green w-100 py-2" id="btn-registro">
+        <i class="bi bi-person-plus me-1"></i> Crear cuenta
+      </button>
+      <div class="auth-footer mt-3">
+        ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const API = "https://polla-api-production.up.railway.app";
+  if (localStorage.getItem("token")) window.location.href = "index.html";
+
+  const btnRegistro = document.getElementById("btn-registro");
+  const errorMsg    = document.getElementById("error-msg");
+  const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function mostrarError(msg) { errorMsg.textContent = msg; errorMsg.classList.add("visible"); }
+  document.querySelectorAll("input").forEach(i => i.addEventListener("input", () => {
+    errorMsg.classList.remove("visible");
+    i.classList.remove("is-invalid");
+  }));
+
+  // Mostrar/ocultar contraseña
+  document.getElementById("toggle-pw").addEventListener("click", () => {
+    const inp  = document.getElementById("password");
+    const icon = document.getElementById("eye-icon");
+    const show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    icon.className = show ? "bi bi-eye-slash" : "bi bi-eye";
+  });
+
+  // Medidor fuerza
+  function medirFuerza(pw) {
+    if (!pw) return { score: 0, label: "", color: "transparent" };
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw))    score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const labels = ["", "Muy débil", "Débil", "Regular", "Fuerte", "Muy fuerte"];
+    const colors = ["transparent", "#E8192C", "#ff6b35", "#F5B800", "#00843D", "#00843D"];
+    return { score, label: labels[score], color: colors[score] };
+  }
+
+  document.getElementById("password").addEventListener("input", function () {
+    const { score, label, color } = medirFuerza(this.value);
+    const bar = document.getElementById("pw-bar");
+    bar.style.width = this.value ? `${score * 20}%` : "0";
+    bar.style.background = color;
+    const lbl = document.getElementById("pw-label");
+    lbl.textContent = label;
+    lbl.style.color = color;
+  });
+
+  // Validar confirmación en tiempo real
+  document.getElementById("confirmar").addEventListener("input", function () {
+    const pw = document.getElementById("password").value;
+    if (this.value) {
+      this.classList.toggle("is-valid",   this.value === pw);
+      this.classList.toggle("is-invalid", this.value !== pw);
+    }
+  });
+
+  function validarPassword(pw) {
+    return pw.length >= 8 && /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /\d/.test(pw);
+  }
+
+  btnRegistro.addEventListener("click", async () => {
+    const nombreEl   = document.getElementById("nombre");
+    const emailEl    = document.getElementById("email");
+    const passwordEl = document.getElementById("password");
+    const confirmarEl= document.getElementById("confirmar");
+
+    const nombre    = nombreEl.value.trim();
+    const email     = emailEl.value.trim();
+    const password  = passwordEl.value;
+    const confirmar = confirmarEl.value;
+
+    [nombreEl, emailEl, passwordEl, confirmarEl].forEach(el => el.classList.remove("is-invalid", "is-valid"));
+    document.getElementById("pw-group").classList.remove("is-invalid");
+
+    let ok = true;
+    if (!nombre || nombre.length < 2 || nombre.length > 80) { nombreEl.classList.add("is-invalid"); ok = false; }
+    if (!email || !EMAIL_RE.test(email))                    { emailEl.classList.add("is-invalid"); ok = false; }
+    if (!password || !validarPassword(password)) {
+      document.getElementById("pw-group").classList.add("is-invalid");
+      passwordEl.classList.add("is-invalid");
+      ok = false;
+    }
+    if (password !== confirmar)                             { confirmarEl.classList.add("is-invalid"); ok = false; }
+
+    if (!ok) { mostrarError("Corrige los campos marcados en rojo."); return; }
+
+    btnRegistro.disabled = true;
+    btnRegistro.innerHTML = '<span class="spinner-wc"></span> Creando cuenta...';
+    try {
+      const res  = await fetch(`${API}/registro`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { mostrarError(data.error || "Error al registrarse."); return; }
+      sessionStorage.setItem("registro_ok", "1");
+      window.location.href = "login.html";
+    } catch (_) {
+      mostrarError("No se pudo conectar con el servidor.");
+    } finally {
+      btnRegistro.disabled = false;
+      btnRegistro.innerHTML = '<i class="bi bi-person-plus me-1"></i> Crear cuenta';
+    }
+  });
+</script>
+</body>
+</html>
