@@ -39,7 +39,7 @@
 
 <nav class="navbar-wc d-flex align-items-center justify-content-between">
   <a class="navbar-brand-wc" href="admin.html">
-    POLLA <span>FIFA WORLD CUP</span> 2026
+    JUEGA <span>FIFA WORLD CUP</span> 2026
     <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
     <span class="badge-admin ms-2">ADMIN</span>
   </a>
@@ -213,6 +213,24 @@
     </div>
   </div>
 
+  <!-- Gestión de usuarios -->
+  <div class="mt-5">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <div class="admin-card-title mb-0">
+        <i class="bi bi-people-fill" style="color:var(--gold)"></i> Usuarios registrados
+      </div>
+      <button class="btn-fifa-green" id="btn-nuevo-usuario" style="padding:.45rem 1.1rem;font-size:.85rem">
+        <i class="bi bi-person-plus-fill me-1"></i> Nuevo usuario
+      </button>
+    </div>
+    <div id="lista-usuarios">
+      <div class="empty-state">
+        <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
+        <h3 style="margin-top:1rem">Cargando...</h3>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ MODAL EDITAR PARTIDO ══ -->
@@ -292,6 +310,63 @@
         <button type="button" class="btn-fifa-outline" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn-fifa-gold" id="btn-guardar-editar">
           <i class="bi bi-floppy me-1"></i> Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL USUARIO ══ -->
+<div class="modal fade" id="modal-usuario" tabindex="-1" aria-labelledby="modal-usuario-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-usuario-title">
+          <i class="bi bi-person-fill me-2"></i><span id="modal-usuario-titulo-texto">Nuevo usuario</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="usuario-edit-id" />
+
+        <div class="mb-3">
+          <label class="form-label">Nombre</label>
+          <input type="text" id="usuario-nombre" class="form-control" placeholder="Nombre completo" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="usuario-email" class="form-control" placeholder="correo@ejemplo.com" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Rol</label>
+          <select id="usuario-rol" class="form-select">
+            <option value="usuario">Usuario</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" id="usuario-pw-label">Contraseña</label>
+          <div class="input-group">
+            <input type="password" id="usuario-password" class="form-control" placeholder="Mín. 8 caracteres" />
+            <button class="btn btn-outline-secondary" type="button" id="btn-toggle-usuario-pw"
+              style="border-color:rgba(255,255,255,.2);color:var(--text-sub)">
+              <i class="bi bi-eye" id="icon-toggle-usuario-pw"></i>
+            </button>
+          </div>
+          <div id="usuario-pw-hint" class="form-text" style="color:var(--text-sub);font-size:.78rem">
+            Dejar en blanco para no cambiar la contraseña.
+          </div>
+        </div>
+
+        <div id="msg-usuario" class="mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-fifa-outline" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn-fifa-gold" id="btn-guardar-usuario">
+          <i class="bi bi-floppy me-1"></i> Guardar
         </button>
       </div>
     </div>
@@ -569,6 +644,168 @@
   });
 
   cargarPartidos();
+
+  // ── USUARIOS ──────────────────────────────────────────────
+  let modalUsuario;
+  document.addEventListener("DOMContentLoaded", () => {
+    modalUsuario = new bootstrap.Modal(document.getElementById("modal-usuario"));
+  });
+
+  // Show/hide password
+  document.getElementById("btn-toggle-usuario-pw").addEventListener("click", () => {
+    const inp  = document.getElementById("usuario-password");
+    const icon = document.getElementById("icon-toggle-usuario-pw");
+    if (inp.type === "password") { inp.type = "text";     icon.className = "bi bi-eye-slash"; }
+    else                         { inp.type = "password"; icon.className = "bi bi-eye"; }
+  });
+
+  async function cargarUsuarios() {
+    try {
+      const res = await fetch(`${API}/admin/usuarios`, { headers: headers() });
+      const usuarios = await res.json();
+      renderTablaUsuarios(usuarios);
+    } catch (_) {
+      document.getElementById("lista-usuarios").innerHTML =
+        '<div class="empty-state"><span class="empty-icon">⚠️</span><h3>Error al cargar usuarios</h3></div>';
+    }
+  }
+
+  function renderTablaUsuarios(usuarios) {
+    if (!usuarios.length) {
+      document.getElementById("lista-usuarios").innerHTML =
+        '<div class="empty-state"><span class="empty-icon">👤</span><h3>No hay usuarios registrados</h3></div>';
+      return;
+    }
+
+    const ME = parseInt(localStorage.getItem("id") || "0");
+
+    const filas = usuarios.map(u => {
+      const avatarHtml = u.foto_perfil
+        ? `<img src="${u.foto_perfil}" alt="${u.nombre}"
+               style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" />`
+        : `<span style="width:38px;height:38px;border-radius:50%;background:rgba(245,184,0,.15);border:2px solid rgba(245,184,0,.3);
+               display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem">
+             <i class="bi bi-person-fill"></i></span>`;
+      const rolBadge = u.rol === "admin"
+        ? `<span style="background:rgba(245,184,0,.18);color:var(--gold);border:1px solid rgba(245,184,0,.35);
+               border-radius:4px;padding:.15rem .55rem;font-size:.72rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.5px">ADMIN</span>`
+        : `<span style="background:rgba(255,255,255,.07);color:var(--text-sub);border:1px solid rgba(255,255,255,.15);
+               border-radius:4px;padding:.15rem .55rem;font-size:.72rem">usuario</span>`;
+      const esSelf = u.id === ME ? `<span style="font-size:.7rem;color:var(--text-sub);margin-left:.4rem">(tú)</span>` : "";
+      return `
+        <tr>
+          <td style="width:48px">${avatarHtml}</td>
+          <td>${u.nombre}${esSelf}</td>
+          <td style="color:var(--text-sub);font-size:.85rem">${u.email}</td>
+          <td>${rolBadge}</td>
+          <td>
+            <button class="action-btn action-btn-edit me-1" onclick="abrirEditarUsuario(${u.id})" title="Editar usuario">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+            <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g, "\\'")}')" title="Eliminar usuario"
+              ${u.id === ME ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}>
+              <i class="bi bi-trash-fill"></i>
+            </button>
+          </td>
+        </tr>`;
+    }).join("");
+
+    document.getElementById("lista-usuarios").innerHTML = `
+      <div class="ranking-card">
+        <div style="overflow-x:auto">
+          <table class="ranking-table">
+            <thead><tr><th></th><th>Nombre</th><th>Email</th><th>Rol</th><th style="text-align:center">Acciones</th></tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  // Abrir modal para crear
+  document.getElementById("btn-nuevo-usuario").addEventListener("click", () => {
+    document.getElementById("usuario-edit-id").value = "";
+    document.getElementById("usuario-nombre").value  = "";
+    document.getElementById("usuario-email").value   = "";
+    document.getElementById("usuario-rol").value     = "usuario";
+    document.getElementById("usuario-password").value = "";
+    document.getElementById("modal-usuario-titulo-texto").textContent = "Nuevo usuario";
+    document.getElementById("usuario-pw-label").textContent = "Contraseña";
+    document.getElementById("usuario-pw-hint").style.display = "none";
+    document.getElementById("usuario-password").placeholder = "Mín. 8 caracteres";
+    msgClear("msg-usuario");
+    modalUsuario.show();
+  });
+
+  // Abrir modal para editar
+  let usuariosCache = [];
+  async function abrirEditarUsuario(id) {
+    // Obtener datos frescos
+    const res = await fetch(`${API}/admin/usuarios`, { headers: headers() });
+    usuariosCache = await res.json();
+    const u = usuariosCache.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById("usuario-edit-id").value = u.id;
+    document.getElementById("usuario-nombre").value  = u.nombre;
+    document.getElementById("usuario-email").value   = u.email;
+    document.getElementById("usuario-rol").value     = u.rol;
+    document.getElementById("usuario-password").value = "";
+    document.getElementById("modal-usuario-titulo-texto").textContent = "Editar usuario";
+    document.getElementById("usuario-pw-label").textContent = "Nueva contraseña (opcional)";
+    document.getElementById("usuario-pw-hint").style.display = "";
+    document.getElementById("usuario-password").placeholder = "Dejar en blanco para no cambiar";
+    msgClear("msg-usuario");
+    modalUsuario.show();
+  }
+
+  // Guardar (crear o editar)
+  document.getElementById("btn-guardar-usuario").addEventListener("click", async () => {
+    const id       = document.getElementById("usuario-edit-id").value;
+    const nombre   = document.getElementById("usuario-nombre").value.trim();
+    const email    = document.getElementById("usuario-email").value.trim();
+    const rol      = document.getElementById("usuario-rol").value;
+    const password = document.getElementById("usuario-password").value;
+    const esNuevo  = !id;
+
+    if (!nombre || !email) { msgErr("msg-usuario", "Nombre y email son obligatorios"); return; }
+    if (esNuevo && !password) { msgErr("msg-usuario", "La contraseña es obligatoria"); return; }
+
+    const body = { nombre, email, rol };
+    if (password) body.password = password;
+
+    const btn = document.getElementById("btn-guardar-usuario");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
+    try {
+      const res = await fetch(
+        esNuevo ? `${API}/admin/usuario` : `${API}/admin/usuario/${id}`,
+        { method: esNuevo ? "POST" : "PUT", headers: headers(), body: JSON.stringify(body) }
+      );
+      const data = await res.json();
+      if (!res.ok) { msgErr("msg-usuario", data.error); return; }
+      toast(esNuevo ? "✅ Usuario creado" : "✅ Usuario actualizado");
+      modalUsuario.hide();
+      cargarUsuarios();
+    } catch (_) { msgErr("msg-usuario", "Error de conexión"); }
+    finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
+    }
+  });
+
+  // Eliminar usuario
+  async function eliminarUsuario(id, nombre) {
+    const ok = confirm(`¿Eliminar al usuario "${nombre}"?\nSe eliminarán también todas sus apuestas. Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    try {
+      const res  = await fetch(`${API}/admin/usuario/${id}`, { method: "DELETE", headers: headers() });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || `Error ${res.status}`, "error"); return; }
+      toast("🗑️ Usuario eliminado");
+      cargarUsuarios();
+    } catch (_) { toast("Error de conexión", "error"); }
+  }
+
+  cargarUsuarios();
 </script>
 </body>
 </html>

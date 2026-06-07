@@ -52,7 +52,7 @@ SMTP_PORT    = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER    = os.environ.get("SMTP_USER", "")
 SMTP_PASS    = os.environ.get("SMTP_PASS", "")
 SMTP_FROM    = os.environ.get("SMTP_FROM", "") or SMTP_USER
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://polla-fifa2026.netlify.app")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://juega-fifa2026.netlify.app")
 
 
 # ─────────────────────────────────────────────
@@ -672,6 +672,115 @@ def mi_campeon():
         cur.close()
         conn.close()
         return jsonify({"campeon": fila["campeon"] if fila else ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────
+# ADMIN: GESTIÓN DE USUARIOS
+# ─────────────────────────────────────────────
+@app.route("/admin/usuarios", methods=["GET"])
+@solo_admin
+def admin_listar_usuarios():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, nombre, email, rol, foto_perfil FROM usuarios ORDER BY id ASC")
+        usuarios = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify([dict(u) for u in usuarios])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/usuario", methods=["POST"])
+@solo_admin
+def admin_crear_usuario():
+    datos = request.get_json()
+    nombre   = datos.get("nombre", "").strip()
+    email    = datos.get("email", "").strip().lower()
+    password = datos.get("password", "")
+    rol      = datos.get("rol", "usuario")
+    if not nombre or not email or not password:
+        return jsonify({"error": "Nombre, email y contraseña son obligatorios"}), 400
+    if rol not in ("usuario", "admin"):
+        return jsonify({"error": "Rol inválido"}), 400
+    hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO usuarios (nombre, email, password, rol) VALUES (%s, %s, %s, %s) RETURNING id",
+            (nombre, email, hash_pw, rol)
+        )
+        uid = cur.fetchone()["id"]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Usuario creado correctamente", "id": uid}), 201
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"error": "El email ya está registrado"}), 409
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/usuario/<int:uid>", methods=["PUT"])
+@solo_admin
+def admin_editar_usuario(uid):
+    datos    = request.get_json()
+    nombre   = datos.get("nombre", "").strip()
+    email    = datos.get("email", "").strip().lower()
+    rol      = datos.get("rol", "usuario")
+    password = datos.get("password", "")
+    if not nombre or not email:
+        return jsonify({"error": "Nombre y email son obligatorios"}), 400
+    if rol not in ("usuario", "admin"):
+        return jsonify({"error": "Rol inválido"}), 400
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        sets   = ["nombre = %s", "email = %s", "rol = %s"]
+        values = [nombre, email, rol]
+        if password:
+            hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            sets.append("password = %s")
+            values.append(hash_pw)
+        values.append(uid)
+        cur.execute(f"UPDATE usuarios SET {', '.join(sets)} WHERE id = %s", values)
+        if cur.rowcount == 0:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Usuario actualizado correctamente"})
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"error": "El email ya está en uso por otro usuario"}), 409
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/usuario/<int:uid>", methods=["DELETE"])
+@solo_admin
+def admin_eliminar_usuario(uid):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT rol FROM usuarios WHERE id = %s", (uid,))
+        usuario = cur.fetchone()
+        if not usuario:
+            cur.close(); conn.close()
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        if usuario["rol"] == "admin":
+            cur.execute("SELECT COUNT(*) AS cnt FROM usuarios WHERE rol = 'admin'")
+            if cur.fetchone()["cnt"] <= 1:
+                cur.close(); conn.close()
+                return jsonify({"error": "No puedes eliminar el único administrador"}), 400
+        cur.execute("DELETE FROM usuarios WHERE id = %s", (uid,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Usuario eliminado correctamente"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
