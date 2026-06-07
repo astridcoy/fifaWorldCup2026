@@ -154,6 +154,31 @@
           </select>
         </div>
 
+        <hr style="border-color:rgba(255,255,255,.1);margin:1rem 0" />
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Estadio (nombre)</label>
+          <input type="text" id="nombre-estadio" class="form-control" placeholder="ej: MetLife Stadium" />
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label"><i class="bi bi-image me-1"></i>Foto del estadio</label>
+          <input type="file" id="file-estadio" class="form-control" accept="image/*" style="display:none" />
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button type="button" class="btn-fifa-outline" id="btn-pick-estadio" style="font-size:.82rem;padding:.4rem .85rem">
+              <i class="bi bi-upload me-1"></i> Subir imagen
+            </button>
+            <input type="text" id="url-estadio" class="form-control" placeholder="O pega una URL de imagen" style="flex:1;min-width:160px" />
+          </div>
+          <div id="preview-estadio-crear" class="mt-2" style="display:none">
+            <img id="img-preview-estadio-crear" src="" alt="Preview"
+              style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid rgba(245,184,0,.3)" />
+            <button type="button" class="btn-danger-sm mt-1 w-100" id="btn-clear-estadio-crear" style="font-size:.75rem">
+              <i class="bi bi-trash me-1"></i> Quitar imagen
+            </button>
+          </div>
+        </div>
+
         <button class="btn-fifa-green w-100 py-2" id="btn-crear">
           <i class="bi bi-plus-lg me-1"></i> Crear partido
         </button>
@@ -326,7 +351,32 @@
           </select>
         </div>
 
-        <hr style="border-color:rgba(255,255,255,.1);margin:1.2rem 0" />
+        <hr style="border-color:rgba(255,255,255,.1);margin:1.1rem 0" />
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Estadio (nombre)</label>
+          <input type="text" id="edit-nombre-estadio" class="form-control" placeholder="ej: MetLife Stadium" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-image me-1"></i>Foto del estadio</label>
+          <input type="file" id="edit-file-estadio" class="form-control" accept="image/*" style="display:none" />
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button type="button" class="btn-fifa-outline" id="btn-edit-pick-estadio" style="font-size:.82rem;padding:.4rem .85rem">
+              <i class="bi bi-upload me-1"></i> Subir imagen
+            </button>
+            <input type="text" id="edit-url-estadio" class="form-control" placeholder="O pega una URL de imagen" style="flex:1;min-width:160px" />
+          </div>
+          <div id="preview-estadio-editar" class="mt-2" style="display:none">
+            <img id="img-preview-estadio-editar" src="" alt="Preview"
+              style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid rgba(245,184,0,.3)" />
+            <button type="button" class="btn-danger-sm mt-1 w-100" id="btn-clear-estadio-editar" style="font-size:.75rem">
+              <i class="bi bi-trash me-1"></i> Quitar imagen
+            </button>
+          </div>
+        </div>
+
+        <hr style="border-color:rgba(255,255,255,.1);margin:1.1rem 0" />
 
         <div class="form-check form-switch mb-3">
           <input class="form-check-input" type="checkbox" id="edit-finalizado" role="switch" />
@@ -546,6 +596,63 @@
   document.getElementById("edit-fase").addEventListener("change",    () => syncGrupoVisibility("edit-fase",    "wrap-grupo-editar"));
   syncGrupoVisibility("fase-partido", "wrap-grupo-crear");
 
+  // ── IMAGEN ESTADIO — helpers ───────────────────────────────
+  let estadioCrearBase64  = null;
+  let estadioEditarBase64 = null;
+  let estadioEditarCambio = false;
+
+  function setupImagenEstadio({ fileInputId, pickBtnId, urlInputId, previewWrapId, previewImgId, clearBtnId, onLoad }) {
+    const fileInput  = document.getElementById(fileInputId);
+    const pickBtn    = document.getElementById(pickBtnId);
+    const urlInput   = document.getElementById(urlInputId);
+    const previewWrap= document.getElementById(previewWrapId);
+    const previewImg = document.getElementById(previewImgId);
+    const clearBtn   = document.getElementById(clearBtnId);
+
+    pickBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewWrap.style.display = "";
+        urlInput.value = "";
+        onLoad(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    urlInput.addEventListener("input", () => {
+      const url = urlInput.value.trim();
+      if (url) { previewImg.src = url; previewWrap.style.display = ""; onLoad(null); }
+      else     { previewWrap.style.display = "none"; onLoad(null); }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      fileInput.value = "";
+      urlInput.value  = "";
+      previewImg.src  = "";
+      previewWrap.style.display = "none";
+      onLoad(null);
+    });
+  }
+
+  setupImagenEstadio({
+    fileInputId: "file-estadio", pickBtnId: "btn-pick-estadio",
+    urlInputId: "url-estadio", previewWrapId: "preview-estadio-crear",
+    previewImgId: "img-preview-estadio-crear", clearBtnId: "btn-clear-estadio-crear",
+    onLoad: (b64) => { estadioCrearBase64 = b64; }
+  });
+
+  setupImagenEstadio({
+    fileInputId: "edit-file-estadio", pickBtnId: "btn-edit-pick-estadio",
+    urlInputId: "edit-url-estadio", previewWrapId: "preview-estadio-editar",
+    previewImgId: "img-preview-estadio-editar", clearBtnId: "btn-clear-estadio-editar",
+    onLoad: (b64) => { estadioEditarBase64 = b64; estadioEditarCambio = true; }
+  });
+
   // ── CREAR ─────────────────────────────────────────────────
   document.getElementById("btn-crear").addEventListener("click", async () => {
     const eqL  = document.getElementById("eq-local").value.trim();
@@ -561,16 +668,23 @@
     try {
       const res  = await fetch(`${API}/admin/partido`, {
         method: "POST", headers: headers(),
-        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo })
+        body: JSON.stringify({
+          equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV,
+          fecha: fech, fase, grupo,
+          nombre_estadio: document.getElementById("nombre-estadio").value.trim(),
+          imagen_estadio: estadioCrearBase64 || document.getElementById("url-estadio").value.trim() || null
+        })
       });
       const data = await res.json();
       if (!res.ok) { msgErr("msg-crear", data.error); return; }
       msgOk("msg-crear", "Partido creado correctamente");
       toast("✅ Partido creado");
       // Limpiar formulario
-      ["eq-local","eq-visita","flag-local","flag-visita","fecha-partido"].forEach(id => {
+      ["eq-local","eq-visita","flag-local","flag-visita","fecha-partido","nombre-estadio","url-estadio"].forEach(id => {
         document.getElementById(id).value = "";
       });
+      estadioCrearBase64 = null;
+      document.getElementById("preview-estadio-crear").style.display = "none";
       cargarPartidos();
     } catch (_) { msgErr("msg-crear", "Error de conexión"); }
   });
@@ -591,7 +705,15 @@
     document.getElementById("edit-flag-visita").value = p.bandera_visita || "";
     document.getElementById("edit-fecha").value       = p.fecha ? p.fecha.slice(0, 16) : "";
     document.getElementById("edit-fase").value        = p.fase;
-    document.getElementById("edit-grupo").value       = p.grupo || "";
+    document.getElementById("edit-grupo").value          = p.grupo || "";
+    document.getElementById("edit-nombre-estadio").value = p.nombre_estadio || "";
+    // Imagen estadio
+    estadioEditarBase64 = null; estadioEditarCambio = false;
+    const prevEdit = document.getElementById("preview-estadio-editar");
+    const imgEdit  = document.getElementById("img-preview-estadio-editar");
+    document.getElementById("edit-url-estadio").value = "";
+    if (p.imagen_estadio) { imgEdit.src = p.imagen_estadio; prevEdit.style.display = ""; }
+    else                  { imgEdit.src = ""; prevEdit.style.display = "none"; }
     // Resultado
     const finalizado = !!p.finalizado;
     document.getElementById("edit-finalizado").checked      = finalizado;
@@ -630,7 +752,12 @@
     try {
       const res  = await fetch(`${API}/admin/partido/${id}`, {
         method: "PUT", headers: headers(),
-        body: JSON.stringify({ equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV, fecha: fech, fase, grupo, finalizado, goles_local: golesLocal, goles_visita: golesVisita })
+        body: JSON.stringify({
+          equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV,
+          fecha: fech, fase, grupo, finalizado, goles_local: golesLocal, goles_visita: golesVisita,
+          nombre_estadio: document.getElementById("edit-nombre-estadio").value.trim(),
+          ...(estadioEditarCambio ? { imagen_estadio: estadioEditarBase64 || document.getElementById("edit-url-estadio").value.trim() || null } : {})
+        })
       });
       const data = await res.json();
       if (!res.ok) {

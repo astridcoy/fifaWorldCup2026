@@ -73,6 +73,8 @@ def init_db():
         cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token TEXT")
         cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP")
         cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS grupo TEXT")
+        cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS imagen_estadio TEXT")
+        cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS nombre_estadio TEXT")
         conn.commit()
         cur.close()
         conn.close()
@@ -381,13 +383,15 @@ def crear_partido():
         conn = get_db()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO partidos (equipo_local, equipo_visita, fecha, fase, bandera_local, bandera_visita, grupo)
-            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+            INSERT INTO partidos (equipo_local, equipo_visita, fecha, fase, bandera_local, bandera_visita, grupo, imagen_estadio, nombre_estadio)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
         """, (
             datos["equipo_local"], datos["equipo_visita"],
             datos["fecha"], datos.get("fase", "Grupos"),
             datos.get("bandera_local", ""), datos.get("bandera_visita", ""),
-            datos.get("grupo", "")
+            datos.get("grupo", ""),
+            datos.get("imagen_estadio", None),
+            datos.get("nombre_estadio", "")
         ))
         partido_id = cur.fetchone()["id"]
         conn.commit()
@@ -407,10 +411,13 @@ def editar_partido(partido_id):
     fase           = datos.get("fase", "Grupos")
     bandera_local  = datos.get("bandera_local", "")
     bandera_visita = datos.get("bandera_visita", "")
-    grupo          = datos.get("grupo", "")
-    finalizado     = bool(datos.get("finalizado", False))
-    goles_local    = datos.get("goles_local", 0)
-    goles_visita   = datos.get("goles_visita", 0)
+    grupo           = datos.get("grupo", "")
+    finalizado      = bool(datos.get("finalizado", False))
+    goles_local     = datos.get("goles_local", 0)
+    goles_visita    = datos.get("goles_visita", 0)
+    nombre_estadio  = datos.get("nombre_estadio", "")
+    # imagen_estadio: only update if key is present in payload
+    tiene_imagen    = "imagen_estadio" in datos
 
     if not equipo_local or not equipo_visita or not fecha:
         return jsonify({"error": "Faltan campos obligatorios"}), 400
@@ -418,15 +425,18 @@ def editar_partido(partido_id):
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("""
-            UPDATE partidos
-            SET equipo_local = %s, equipo_visita = %s,
+        sets   = """equipo_local = %s, equipo_visita = %s,
                 bandera_local = %s, bandera_visita = %s,
                 fecha = %s, fase = %s, grupo = %s,
-                finalizado = %s, goles_local = %s, goles_visita = %s
-            WHERE id = %s
-        """, (equipo_local, equipo_visita, bandera_local, bandera_visita,
-              fecha, fase, grupo, finalizado, goles_local, goles_visita, partido_id))
+                finalizado = %s, goles_local = %s, goles_visita = %s,
+                nombre_estadio = %s"""
+        values = [equipo_local, equipo_visita, bandera_local, bandera_visita,
+                  fecha, fase, grupo, finalizado, goles_local, goles_visita, nombre_estadio]
+        if tiene_imagen:
+            sets  += ", imagen_estadio = %s"
+            values.append(datos["imagen_estadio"])
+        values.append(partido_id)
+        cur.execute(f"UPDATE partidos SET {sets} WHERE id = %s", values)
         if cur.rowcount == 0:
             return jsonify({"error": "Partido no encontrado"}), 404
 

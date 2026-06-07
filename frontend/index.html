@@ -389,10 +389,19 @@ function tarjetaPartido(p) {
     apuestaHTML = `<p class="match-closed-msg">No apostaste en este partido</p>`;
   }
 
+  const estadioHTML = p.imagen_estadio ? `
+    <div class="match-stadium">
+      <img src="${p.imagen_estadio}" alt="${p.nombre_estadio || 'Estadio'}" loading="lazy" />
+      <div class="match-stadium-overlay">
+        <span class="match-phase-badge" style="margin:0">${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</span>
+        ${p.nombre_estadio ? `<span class="match-stadium-name">${p.nombre_estadio}</span>` : ""}
+      </div>
+    </div>` : `<div class="match-phase-badge">${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</div>`;
+
   return `
     <div class="${clases}">
-      <div class="match-phase-badge">${p.fase}</div>
-      <div class="match-teams">
+      ${estadioHTML}
+      <div class="match-teams" style="${p.imagen_estadio ? 'margin-top:.5rem' : ''}">
         <div class="team-side">
           <span class="team-flag">${p.bandera_local}</span>
           <span class="team-name">${p.equipo_local}</span>

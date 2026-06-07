@@ -251,6 +251,42 @@ body {
 .phase-tab:hover  { border-color: var(--gold); color: var(--gold); }
 .phase-tab.active { background: var(--gold); border-color: var(--gold); color: var(--navy); }
 
+/* ── Match stadium photo ── */
+.match-stadium {
+  height: 130px;
+  position: relative;
+  overflow: hidden;
+  margin: -1.25rem -1.25rem .85rem;
+  border-radius: 13px 13px 0 0;
+  flex-shrink: 0;
+}
+.match-stadium img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform .4s ease;
+}
+.match-card:hover .match-stadium img { transform: scale(1.04); }
+.match-stadium-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6,14,28,.92) 0%, rgba(6,14,28,.3) 55%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: .6rem .85rem;
+  gap: .2rem;
+}
+.match-stadium-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+}
+
 /* ── Match grid ── */
 .matches-grid {
   display: grid;
