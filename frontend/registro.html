@@ -14,7 +14,7 @@
 
   <!-- ══ CAROUSEL PANEL ══ -->
   <div class="auth-split-carousel">
-    <div id="authCarousel" class="carousel slide fifa-carousel">
+    <div id="authCarousel" class="carousel fifa-carousel">
       <div class="carousel-inner">
 
         <div class="carousel-item active">
@@ -131,7 +131,24 @@
 <script>
   (function () {
     const el = document.getElementById("authCarousel");
-    if (el) new bootstrap.Carousel(el, { interval: 4500, wrap: true, ride: "carousel" });
+    if (!el) return;
+    const items = Array.from(el.querySelectorAll('.carousel-item'));
+    const dots  = Array.from(el.querySelectorAll('.carousel-indicators button'));
+    let cur = 0, busy = false;
+    function go(n) {
+      if (busy) return;
+      busy = true;
+      items[cur].classList.remove('active');
+      dots[cur]?.classList.remove('active');
+      cur = (n + items.length) % items.length;
+      items[cur].classList.add('active');
+      dots[cur]?.classList.add('active');
+      setTimeout(() => { busy = false; }, 700);
+    }
+    el.querySelector('.carousel-control-next')?.addEventListener('click', () => go(cur + 1));
+    el.querySelector('.carousel-control-prev')?.addEventListener('click', () => go(cur - 1));
+    dots.forEach((d, i) => d.addEventListener('click', () => go(i)));
+    setInterval(() => go(cur + 1), 4500);
   })();
 
   const API = "https://polla-api-production.up.railway.app";

@@ -1166,8 +1166,17 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 
 /* ── FIFA Carousel (auth) ── */
 .fifa-carousel,
-.fifa-carousel .carousel-inner,
-.fifa-carousel .carousel-item { height: 100%; }
+.fifa-carousel .carousel-inner { height: 100%; }
+
+/* Custom fade: stack all items via absolute, reveal active via opacity */
+.fifa-carousel .carousel-item {
+  position: absolute !important;
+  inset: 0;
+  height: 100% !important;
+  opacity: 0;
+  transition: opacity 0.65s ease-in-out;
+}
+.fifa-carousel .carousel-item.active { opacity: 1; }
 
 /* Image-based slide */
 .carousel-slide-img {
