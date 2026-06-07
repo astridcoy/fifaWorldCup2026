@@ -40,7 +40,8 @@ function formatFecha(fechaStr) {
 }
 
 function estaAbierto(partido) {
-  return !partido.finalizado && new Date() < new Date(partido.fecha);
+  const deadline = new Date(partido.fecha).getTime() - 24 * 60 * 60 * 1000;
+  return !partido.finalizado && Date.now() < deadline;
 }
 
 async function cargarMiCampeon() {
@@ -504,9 +505,9 @@ function tarjetaPartido(p) {
   if (abierto && !bloqueado) {
     apuestaHTML = `<div class="bet-section">${attemptDots}
       <div class="bet-inputs">
-        <input type="number" class="bet-input" min="0" max="20" value="${yaApostado ? p.goles_local_apostado : 0}" id="gl-${p.id}" />
+        <input type="number" class="bet-input" min="0" max="10" value="${yaApostado ? p.goles_local_apostado : 0}" id="gl-${p.id}" />
         <span class="bet-separator">–</span>
-        <input type="number" class="bet-input" min="0" max="20" value="${yaApostado ? p.goles_visita_apostado : 0}" id="gv-${p.id}" />
+        <input type="number" class="bet-input" min="0" max="10" value="${yaApostado ? p.goles_visita_apostado : 0}" id="gv-${p.id}" />
       </div>
       <button class="btn-fifa-green w-100 mt-2" id="btn-apostar-${p.id}">
         <i class="bi bi-${yaApostado ? 'pencil' : 'check-circle'} me-1"></i>${yaApostado ? "Actualizar apuesta" : "Apostar"}

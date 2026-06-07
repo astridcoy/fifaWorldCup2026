@@ -1,3 +1,4 @@
+import re
 import bcrypt
 import jwt
 import secrets
@@ -9,6 +10,60 @@ from config import SECRET_KEY, SMTP_HOST, SMTP_USER
 
 auth_bp = Blueprint("auth", __name__)
 
+# ── Validación de email ──────────────────────────────────────────
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+
+# Dominios de correo desechables/temporales conocidos
+_DISPOSABLE = frozenset([
+    "mailinator.com", "guerrillamail.com", "guerrillamail.info",
+    "guerrillamail.biz", "guerrillamail.de", "guerrillamail.net",
+    "guerrillamail.org", "guerrillamailblock.com", "grr.la", "sharklasers.com",
+    "spam4.me", "trashmail.com", "trashmail.me", "trashmail.net", "trashmail.at",
+    "trashmail.io", "trashmail.org", "trashemails.de", "trashmailer.com",
+    "discard.email", "discardmail.com", "discardmail.de", "fakeinbox.com",
+    "mailnull.com", "yopmail.com", "yopmail.fr", "yopmail.net",
+    "temp-mail.org", "tempmail.com", "tempmail.net", "tempr.email",
+    "tempinbox.com", "temporaryemail.net", "temporaremail.com",
+    "temporaryinbox.com", "tempymail.com", "throwaway.email", "throwam.com",
+    "throwemailaway.com", "maildrop.cc", "spamgourmet.com", "spamgourmet.net",
+    "spamgourmet.org", "mytrashmail.com", "mt2009.com", "dispostable.com",
+    "mailexpire.com", "fakemailgenerator.com", "10minutemail.com",
+    "10minutemail.net", "minutemailbox.com", "crazymailing.com",
+    "hmamail.com", "pookmail.com", "objectmail.com", "rcpt.at",
+    "trbvm.com", "trbvn.com", "binkmail.com", "bob.email",
+    "deadaddress.com", "dumpmail.de", "jetable.com", "jetable.fr.nf",
+    "jetable.net", "jetable.org", "kasmail.com", "killmail.com",
+    "killmail.net", "lazyinbox.com", "mailbolt.com", "mailcatch.com",
+    "mailin8r.com", "mailinator2.com", "mailsiphon.com", "mintemail.com",
+    "mvrht.com", "no-spam.ws", "nomail.pw", "odaymail.com",
+    "one-time.email", "onewaymail.com", "papierkorb.me", "pfui.ru",
+    "pjjkp.com", "popmail.io", "prtnx.com", "safetypost.de",
+    "sneakemail.com", "snkmail.com", "sogetthis.com", "spamavert.com",
+    "spambog.com", "spamcorptastic.com", "spamcowboy.com", "spamfree.eu",
+    "spamgob.com", "spamhole.com", "spaml.com", "spammotel.com",
+    "spamoff.de", "spamspot.com", "squizzy.net", "tafmail.com",
+    "techemail.com", "teleworm.us", "tmail.com", "tmail.io",
+    "toiea.com", "trashdevil.com", "trashdevil.de", "turual.com",
+    "vaultmail.co", "vomoto.com", "walkmail.net", "wegwerfmail.de",
+    "wegwerfmail.net", "xagloo.com", "yaoo.fr", "yapped.net",
+    "zehnminutenmail.de", "zippymail.info", "zzrgg.com",
+    "inboxalias.com", "instant-mail.de", "mail-temporaire.fr",
+    "mailguard.me", "mailimate.com", "mailme.ir", "mailme24.com",
+    "mailmoat.com", "mailnew.com", "mailpick.biz", "mailzilla.com",
+    "mailzilla.org", "getonemail.com", "gettempmail.com",
+])
+
+
+def _email_valido(email):
+    """Retorna (True, "") o (False, mensaje_error)."""
+    if not _EMAIL_RE.match(email):
+        return False, "Formato de correo inválido"
+    domain = email.split("@", 1)[1].lower()
+    if domain in _DISPOSABLE:
+        return False, ("No se aceptan correos temporales o desechables. "
+                       "Usa tu correo de Gmail, Hotmail, Outlook u otro proveedor válido.")
+    return True, ""
+
 
 @auth_bp.route("/registro", methods=["POST"])
 def registro():
@@ -19,6 +74,10 @@ def registro():
 
     if not nombre or not email or not password:
         return jsonify({"error": "Todos los campos son obligatorios"}), 400
+
+    ok, msg = _email_valido(email)
+    if not ok:
+        return jsonify({"error": msg}), 400
 
     hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     try:

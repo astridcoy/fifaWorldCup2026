@@ -18,5 +18,8 @@ app.register_blueprint(admin_bp)
 with app.app_context():
     init_db()
 
+from notifications import start_scheduler
+start_scheduler()
+
 if __name__ == "__main__":
     app.run(debug=True)

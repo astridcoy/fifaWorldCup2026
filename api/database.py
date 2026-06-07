@@ -34,6 +34,16 @@ def init_db():
         cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS grupo TEXT")
         cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS imagen_estadio TEXT")
         cur.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS nombre_estadio TEXT")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS notificaciones (
+                id          SERIAL PRIMARY KEY,
+                id_usuario  INT  NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                id_partido  INT  NOT NULL REFERENCES partidos(id) ON DELETE CASCADE,
+                tipo        VARCHAR(50) NOT NULL,
+                enviado_en  TIMESTAMP DEFAULT NOW(),
+                UNIQUE (id_usuario, id_partido, tipo)
+            )
+        """)
         conn.commit()
         cur.close()
         conn.close()

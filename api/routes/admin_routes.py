@@ -1,3 +1,4 @@
+import threading
 import bcrypt
 import psycopg2
 from flask import Blueprint, request, jsonify
@@ -122,9 +123,21 @@ def ingresar_resultado(partido_id):
             cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
         conn.commit()
         cur.close(); conn.close()
+        # Notificar a apostadores en background (no bloquea la respuesta)
+        threading.Thread(
+            target=_notificar_resultado, args=(partido_id,), daemon=True
+        ).start()
         return jsonify({"mensaje": "Resultado ingresado y puntos calculados"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def _notificar_resultado(partido_id):
+    try:
+        from notifications import notify_result_to_all
+        notify_result_to_all(partido_id)
+    except Exception as e:
+        print(f"[admin] _notificar_resultado: {e}")
 
 
 @admin_bp.route("/campeon-real", methods=["PUT"])

@@ -1,6 +1,9 @@
+from datetime import timedelta
 from flask import Blueprint, request, jsonify
 from database import get_db, row_as_dict, chile_now
 from auth import token_requerido
+
+_MAX_GOLES = 10
 
 match_bp = Blueprint("match", __name__)
 
@@ -35,6 +38,18 @@ def apostar():
     goles_local  = datos.get("goles_local_apostado")
     goles_visita = datos.get("goles_visita_apostado")
 
+    if goles_local is None or goles_visita is None:
+        return jsonify({"error": "Debes ingresar ambos marcadores"}), 400
+    try:
+        goles_local  = int(goles_local)
+        goles_visita = int(goles_visita)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Los goles deben ser números enteros"}), 400
+    if goles_local < 0 or goles_visita < 0:
+        return jsonify({"error": "Los goles no pueden ser negativos"}), 400
+    if goles_local > _MAX_GOLES or goles_visita > _MAX_GOLES:
+        return jsonify({"error": f"El máximo permitido es {_MAX_GOLES} goles por equipo"}), 400
+
     try:
         conn = get_db()
         cur  = conn.cursor()
@@ -45,8 +60,9 @@ def apostar():
             return jsonify({"error": "Partido no encontrado"}), 404
         if partido["finalizado"]:
             return jsonify({"error": "El partido ya finalizó, no puedes apostar"}), 400
-        if chile_now() >= partido["fecha"]:
-            return jsonify({"error": "El partido ya comenzó, no puedes apostar"}), 400
+        deadline = partido["fecha"] - timedelta(hours=24)
+        if chile_now() >= deadline:
+            return jsonify({"error": "Las apuestas cerraron 24 horas antes del partido"}), 400
 
         cur.execute(
             "SELECT intentos FROM apuestas WHERE id_usuario = %s AND id_partido = %s",

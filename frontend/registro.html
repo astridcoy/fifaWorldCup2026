@@ -96,7 +96,7 @@
       <div class="mb-3">
         <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
         <input type="email" id="email" class="form-control" placeholder="tu@correo.com" autocomplete="email" />
-        <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
+        <div class="invalid-feedback">Usa un correo de Gmail, Hotmail, Outlook u otro proveedor válido. No se aceptan correos temporales.</div>
       </div>
       <div class="mb-3">
         <label class="form-label"><i class="bi bi-lock me-1"></i>Contraseña</label>
@@ -134,7 +134,38 @@
 
   const btnRegistro = document.getElementById("btn-registro");
   const errorMsg    = document.getElementById("error-msg");
-  const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const EMAIL_RE    = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+  const BLOCKED_DOMAINS = new Set([
+    "mailinator.com","guerrillamail.com","guerrillamail.info","guerrillamail.biz",
+    "guerrillamail.de","guerrillamail.net","guerrillamail.org","grr.la",
+    "sharklasers.com","guerrillamailblock.com","spam4.me","trashmail.com",
+    "trashmail.me","trashmail.net","trashmail.at","trashmail.io","trashmailer.com",
+    "discard.email","discardmail.com","fakeinbox.com","mailnull.com",
+    "yopmail.com","yopmail.fr","yopmail.net","temp-mail.org","tempmail.com",
+    "tempmail.net","tempr.email","tempinbox.com","temporaryemail.net",
+    "temporaryinbox.com","throwaway.email","throwam.com","maildrop.cc",
+    "spamgourmet.com","mytrashmail.com","mt2009.com","dispostable.com",
+    "mailexpire.com","fakemailgenerator.com","10minutemail.com","10minutemail.net",
+    "minutemailbox.com","crazymailing.com","hmamail.com","pookmail.com",
+    "rcpt.at","trbvm.com","trbvn.com","binkmail.com","bob.email",
+    "deadaddress.com","jetable.com","jetable.net","jetable.org",
+    "kasmail.com","killmail.com","lazyinbox.com","mailbolt.com",
+    "mailcatch.com","mailin8r.com","mintemail.com","mvrht.com",
+    "nomail.pw","odaymail.com","one-time.email","papierkorb.me",
+    "popmail.io","safetypost.de","sneakemail.com","sogetthis.com",
+    "spamavert.com","spambog.com","spamfree.eu","spamhole.com",
+    "spaml.com","spammotel.com","spamoff.de","spamspot.com",
+    "tafmail.com","teleworm.us","tmail.com","tmail.io",
+    "trashdevil.com","turual.com","vomoto.com","walkmail.net",
+    "wegwerfmail.de","xagloo.com","yapped.net","zehnminutenmail.de",
+    "zippymail.info","zzrgg.com","mailzilla.com","getonemail.com",
+  ]);
+
+  function emailDominioValido(email) {
+    const domain = email.split("@")[1]?.toLowerCase();
+    return domain && !BLOCKED_DOMAINS.has(domain);
+  }
 
   function mostrarError(msg) { errorMsg.textContent = msg; errorMsg.classList.add("visible"); }
   document.querySelectorAll("input").forEach(i => i.addEventListener("input", () => {
@@ -204,7 +235,7 @@
 
     let ok = true;
     if (!nombre || nombre.length < 2 || nombre.length > 80) { nombreEl.classList.add("is-invalid"); ok = false; }
-    if (!email || !EMAIL_RE.test(email))                    { emailEl.classList.add("is-invalid"); ok = false; }
+    if (!email || !EMAIL_RE.test(email) || !emailDominioValido(email)) { emailEl.classList.add("is-invalid"); ok = false; }
     if (!password || !validarPassword(password)) {
       document.getElementById("pw-group").classList.add("is-invalid");
       passwordEl.classList.add("is-invalid");
