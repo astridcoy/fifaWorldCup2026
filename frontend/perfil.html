@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polla FIFA 2026 — Mi Perfil</title>
+  <title>Juega FIFA World Cup 2026 — Mi Perfil</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://polla-api-production.up.railway.app;">
   <style>
     .perfil-avatar-wrap {
       position: relative;
@@ -106,6 +107,7 @@
   <div class="d-flex align-items-center gap-2">
     <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
     <a class="navbar-brand-wc" href="index.html">
+      <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
       JUEGA <span>FIFA WORLD CUP</span> 2026
       <span class="navbar-hosts">
         <span class="hflag" title="USA">🇺🇸</span>
@@ -209,252 +211,75 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-const API    = "https://polla-api-production.up.railway.app";
-const TOKEN  = localStorage.getItem("token");
-if (!TOKEN) window.location.href = "login.html";
+<script src="security.js"></script>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/perfil.js"></script>
 
-document.getElementById("btn-logout").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "login.html";
-});
+<footer class="site-footer">
+  <div class="footer-inner">
 
-// ── Sidebar móvil ──
-(function() {
-  const hamburger = document.getElementById("nav-hamburger");
-  const drawer    = document.getElementById("sidebar-drawer");
-  const overlay   = document.getElementById("sidebar-overlay");
-  const closeBtn  = document.getElementById("sidebar-close");
-  const logoutBtn = document.getElementById("sidebar-logout");
-  const adminLink = document.getElementById("sidebar-admin-link");
-  if (localStorage.getItem("rol") === "admin") adminLink.style.display = "flex";
-  function open()  { drawer.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow = "hidden"; }
-  function close() { drawer.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow = ""; }
-  hamburger.addEventListener("click", open);
-  overlay.addEventListener("click", close);
-  closeBtn.addEventListener("click", close);
-  logoutBtn.addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
-})();
+    <div class="footer-brand-col">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <img src="img/fifa2026-logo.png" class="footer-logo" alt="FIFA 2026" />
+        <div class="footer-brand-name">JUEGA <span>FIFA WORLD CUP</span> 2026</div>
+      </div>
+      <p class="footer-tagline">Predice los marcadores de cada partido, apuesta al campeón y demuestra que eres el mayor experto futbolero de tu grupo.</p>
+      <div class="footer-host-row">
+        <span title="Estados Unidos">🇺🇸</span>
+        <span title="Canadá">🇨🇦</span>
+        <span title="México">🇲🇽</span>
+        <span class="footer-host-date">11 Jun – 19 Jul 2026</span>
+      </div>
+    </div>
 
-function toast(msg, tipo = "success") {
-  const t = document.createElement("div");
-  t.className = `toast-wc toast-${tipo}`;
-  t.textContent = msg;
-  document.getElementById("toast-container").appendChild(t);
-  setTimeout(() => t.remove(), 3500);
-}
+    <div>
+      <h4 class="footer-heading">El Torneo</h4>
+      <ul class="footer-info-list">
+        <li><i class="bi bi-calendar3-event"></i> 11 junio – 19 julio 2026</li>
+        <li><i class="bi bi-flag-fill"></i> 48 selecciones nacionales</li>
+        <li><i class="bi bi-dribbble"></i> 104 partidos en total</li>
+        <li><i class="bi bi-geo-alt-fill"></i> 16 sedes · 3 países anfitriones</li>
+        <li><i class="bi bi-trophy-fill"></i> Final: 19 jul · MetLife Stadium NJ</li>
+        <li><i class="bi bi-people-fill"></i> ~5,5 millones de espectadores</li>
+      </ul>
+    </div>
 
-function headers() {
-  return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
-}
+    <div>
+      <h4 class="footer-heading">Juega FIFA 2026</h4>
+      <ul class="footer-links-list">
+        <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
+        <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
+        <li><a href="perfil.html"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
+      </ul>
+    </div>
 
-// ── Foto de perfil ──────────────────────────────────────────
-let fotoBase64       = null;   // nueva foto elegida (base64)
-let pendingDeleteFoto = false; // si el usuario quiere borrar la foto actual
+    <div>
+      <h4 class="footer-heading">Links Oficiales</h4>
+      <ul class="footer-links-list">
+        <li><a href="https://www.fifa.com" target="_blank" rel="noopener"><i class="bi bi-globe2"></i> FIFA.com</a></li>
+        <li><a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener"><i class="bi bi-soccer-ball"></i> Copa Mundial 2026</a></li>
+        <li><a href="https://www.conmebol.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> CONMEBOL</a></li>
+        <li><a href="https://www.uefa.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> UEFA</a></li>
+        <li><a href="https://www.fifatickets.com" target="_blank" rel="noopener"><i class="bi bi-ticket-perforated"></i> Entradas FIFA</a></li>
+      </ul>
+      <div class="footer-social-row">
+        <a href="https://twitter.com/FIFAWorldCup" target="_blank" rel="noopener" class="footer-social-btn" title="Twitter / X"><i class="bi bi-twitter-x"></i></a>
+        <a href="https://www.instagram.com/fifaworldcup/" target="_blank" rel="noopener" class="footer-social-btn" title="Instagram"><i class="bi bi-instagram"></i></a>
+        <a href="https://www.youtube.com/FIFA" target="_blank" rel="noopener" class="footer-social-btn" title="YouTube"><i class="bi bi-youtube"></i></a>
+        <a href="https://www.facebook.com/fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://www.tiktok.com/@fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="TikTok"><i class="bi bi-tiktok"></i></a>
+      </div>
+    </div>
 
-const inputFoto   = document.getElementById("input-foto");
-const avatarImg   = document.getElementById("avatar-img");
-const avatarDef   = document.getElementById("avatar-default");
-const btnDelFoto  = document.getElementById("btn-delete-foto");
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-bottom-inner">
+      <span class="footer-copy">© 2026 Juega FIFA World Cup 2026 — Proyecto independiente no afiliado a FIFA.</span>
+      <span class="footer-disclaimer">FIFA™, FIFA World Cup™ y el trofeo de la Copa Mundial son marcas registradas de la Fédération Internationale de Football Association.</span>
+    </div>
+  </div>
+</footer>
 
-function mostrarFoto(src) {
-  avatarImg.src = src;
-  avatarImg.classList.remove("d-none");
-  avatarDef.classList.add("d-none");
-  btnDelFoto.classList.remove("d-none");
-}
-
-function ocultarFoto() {
-  avatarImg.src = "";
-  avatarImg.classList.add("d-none");
-  avatarDef.classList.remove("d-none");
-  btnDelFoto.classList.add("d-none");
-}
-
-document.getElementById("btn-foto").addEventListener("click", () => inputFoto.click());
-
-inputFoto.addEventListener("change", () => {
-  const file = inputFoto.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    toast("La imagen no debe superar 2 MB", "error");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = e => {
-    fotoBase64 = e.target.result;
-    pendingDeleteFoto = false;
-    mostrarFoto(fotoBase64);
-  };
-  reader.readAsDataURL(file);
-});
-
-btnDelFoto.addEventListener("click", () => {
-  fotoBase64 = null;
-  pendingDeleteFoto = true;
-  ocultarFoto();
-  inputFoto.value = "";
-});
-
-// ── Mostrar/ocultar contraseña ──────────────────────────────
-document.getElementById("toggle-pw").addEventListener("click", () => {
-  const inp  = document.getElementById("p-password");
-  const icon = document.getElementById("eye-icon");
-  const show = inp.type === "password";
-  inp.type = show ? "text" : "password";
-  icon.className = show ? "bi bi-eye-slash" : "bi bi-eye";
-});
-
-// ── Medidor de fuerza de contraseña ─────────────────────────
-function medirFuerza(pw) {
-  if (!pw) return { score: 0, label: "", color: "transparent" };
-  let score = 0;
-  if (pw.length >= 8)  score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[a-z]/.test(pw)) score++;
-  if (/\d/.test(pw))    score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  const labels = ["", "Muy débil", "Débil", "Regular", "Fuerte", "Muy fuerte"];
-  const colors = ["transparent", "#E8192C", "#ff6b35", "#F5B800", "#00843D", "#00843D"];
-  return { score, label: labels[score], color: colors[score] };
-}
-
-document.getElementById("p-password").addEventListener("input", function () {
-  const { score, label, color } = medirFuerza(this.value);
-  const bar = document.getElementById("pw-bar");
-  bar.style.width = this.value ? `${score * 20}%` : "0";
-  bar.style.background = color;
-  document.getElementById("pw-label").textContent = label;
-  document.getElementById("pw-label").style.color = color;
-});
-
-// ── Validaciones ─────────────────────────────────────────────
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validarEmail(val) {
-  return EMAIL_RE.test(val);
-}
-
-function validarPassword(val) {
-  return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /\d/.test(val);
-}
-
-function setValidez(id, ok) {
-  const el = document.getElementById(id);
-  el.classList.toggle("is-valid",   ok);
-  el.classList.toggle("is-invalid", !ok);
-}
-
-function clearValidez(...ids) {
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove("is-valid", "is-invalid");
-  });
-}
-
-document.getElementById("p-nombre").addEventListener("input", function () {
-  const ok = this.value.trim().length >= 2 && this.value.trim().length <= 80;
-  setValidez("p-nombre", ok);
-});
-
-document.getElementById("p-email").addEventListener("input", function () {
-  setValidez("p-email", validarEmail(this.value.trim()));
-});
-
-document.getElementById("p-confirmar").addEventListener("input", function () {
-  const pw = document.getElementById("p-password").value;
-  if (this.value || pw) setValidez("p-confirmar", this.value === pw);
-});
-
-// ── Cargar perfil ─────────────────────────────────────────────
-async function cargarPerfil() {
-  try {
-    const res  = await fetch(`${API}/perfil`, { headers: headers() });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || "Error al cargar perfil", "error"); return; }
-
-    document.getElementById("p-nombre").value = data.nombre || "";
-    document.getElementById("p-email").value  = data.email  || "";
-
-    if (data.foto_perfil) {
-      mostrarFoto(data.foto_perfil);
-    }
-  } catch (_) {
-    toast("Error de conexión", "error");
-  }
-}
-
-// ── Guardar perfil ────────────────────────────────────────────
-document.getElementById("btn-guardar").addEventListener("click", async () => {
-  const nombre    = document.getElementById("p-nombre").value.trim();
-  const email     = document.getElementById("p-email").value.trim();
-  const password  = document.getElementById("p-password").value;
-  const confirmar = document.getElementById("p-confirmar").value;
-
-  clearValidez("p-nombre", "p-email", "p-password", "p-confirmar");
-
-  let ok = true;
-
-  if (!nombre || nombre.length < 2 || nombre.length > 80) {
-    setValidez("p-nombre", false); ok = false;
-  }
-  if (!validarEmail(email)) {
-    setValidez("p-email", false); ok = false;
-  }
-  if (password) {
-    if (!validarPassword(password)) {
-      document.getElementById("pw-group").classList.add("is-invalid");
-      setValidez("p-password", false);
-      ok = false;
-    } else {
-      document.getElementById("pw-group").classList.remove("is-invalid");
-    }
-    if (password !== confirmar) {
-      setValidez("p-confirmar", false); ok = false;
-    }
-  } else {
-    document.getElementById("pw-group").classList.remove("is-invalid");
-  }
-
-  if (!ok) return;
-
-  const body = { nombre, email };
-  if (password)          body.password    = password;
-  if (fotoBase64)        body.foto_perfil = fotoBase64;
-  else if (pendingDeleteFoto) body.foto_perfil = null;
-
-  const btn = document.getElementById("btn-guardar");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
-
-  try {
-    const res  = await fetch(`${API}/perfil`, {
-      method: "PUT", headers: headers(),
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || "Error al guardar", "error"); return; }
-
-    toast("✅ Perfil actualizado");
-    localStorage.setItem("nombre", nombre);
-
-    // Limpiar campos de contraseña
-    document.getElementById("p-password").value  = "";
-    document.getElementById("p-confirmar").value = "";
-    document.getElementById("pw-bar").style.width = "0";
-    document.getElementById("pw-label").textContent = "";
-    fotoBase64 = null;
-    pendingDeleteFoto = false;
-    clearValidez("p-nombre", "p-email", "p-password", "p-confirmar");
-  } catch (_) {
-    toast("Error de conexión", "error");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar cambios';
-  }
-});
-
-cargarPerfil();
-</script>
 </body>
 </html>

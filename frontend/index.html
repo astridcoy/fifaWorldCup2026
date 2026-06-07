@@ -3,10 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polla FIFA WORLD CUP 2026 — Mis Apuestas</title>
+  <title>Juega FIFA World Cup 2026 — Mis Apuestas</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://polla-api-production.up.railway.app;">
+  <style>
+    .grupos-featured-label,
+    .grupos-section-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      color: var(--text-sub);
+      margin: 0 0 .75rem;
+      display: flex;
+      align-items: center;
+    }
+    .grupos-section-label { margin-top: 1.5rem; }
+    .grupos-featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: 1.25rem;
+    }
+    .grupos-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: 1.25rem;
+    }
+    #accordion-grupos .accordion-button::after { filter: invert(1) brightness(1.5); }
+    #accordion-grupos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.06) !important; }
+  </style>
 </head>
 <body>
 
@@ -34,6 +60,7 @@
   <div class="d-flex align-items-center gap-2">
     <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
     <a class="navbar-brand-wc" href="index.html">
+      <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
       JUEGA <span>FIFA WORLD CUP</span> 2026
       <span class="navbar-hosts">
         <span class="hflag" title="USA">🇺🇸</span>
@@ -64,16 +91,18 @@
         <div class="hero-carousel-item h1">
           <img src="img/fifa.jpg" alt="FIFA 2026" />
           <div class="hero-slide-content">
-            <div class="hero-badge">🏆 FIFA WORLD CUP™ 2026</div>
+            <div class="hero-badge"><img src="img/fifa2026-logo.png" style="height:18px;width:auto;vertical-align:middle;margin-right:5px;object-fit:contain" alt="" />FIFA WORLD CUP™ 2026</div>
+            <h2>ONLY <span>FORWARD</span></h2>
             <h2>SOLO <span>HACIA</span> ADELANTE</h2>
             <p>48 equipos · 104 partidos · 16 sedes en 3 países</p>
           </div>
         </div>
       </div>
 
+
       <div class="carousel-item">
         <div class="hero-carousel-item h2">
-          <img src="img/fifa1.png" alt="Sedes" />
+          <img src="img/host-map.jpg" alt="Sedes" />
           <div class="hero-slide-content">
             <div class="hero-badge">🌎 PAÍSES SEDE</div>
             <h2><span class="hero-flags">🇺🇸 🇨🇦 🇲🇽</span></h2>
@@ -84,10 +113,22 @@
 
 
       <div class="carousel-item">
+        <div class="hero-carousel-item h2">
+          <img src="img/estadio.jpg" alt="Estadio" />
+          <div class="hero-slide-content">
+            <h2>AZTECA ·<span> STADIUM</span></h2>
+            <p> Ciudad de México </p>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="carousel-item">
         <div class="hero-carousel-item h3">
           <img src="img/host-cities.jpg" alt="Host Cities" />
           <div class="hero-slide-content">
-            <div class="hero-badge">⚽ TU POLLA</div>
+            <div class="hero-badge">⚽ TU APUESTA</div>
             <h2>APUESTA Y <span>GANA</span></h2>
             <p>Exacto = 3 pts · Ganador = 1 pt · Campeón = 5 pts</p>
           </div>
@@ -142,9 +183,12 @@
     <p>Ingresa el marcador exacto que crees que va a ser en cada partido.</p>
   </div>
 
+  <!-- Stats bar -->
+  <div id="stats-bar" class="stats-bar-wrap"></div>
+
   <!-- Champion section -->
   <div class="campeon-card">
-    <span class="campeon-trophy">🏆</span>
+    <img src="img/fifa2026-logo.png" class="campeon-trophy" alt="FIFA 2026" />
     <div class="campeon-info">
       <h3>Campeón del Mundial</h3>
       <p>Acertar el campeón te da <strong style="color:var(--gold)">5 puntos</strong> al final del torneo</p>
@@ -164,9 +208,8 @@
 
   <!-- Matches grid -->
   <div class="matches-grid" id="partidos-grid">
-    <div class="empty-state">
-      <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
-      <h3 style="margin-top:1rem">Cargando partidos...</h3>
+    <div class="match-card placeholder-glow" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:1.25rem;background:none;border:none;padding:0">
+      <!-- skeleton filled by JS -->
     </div>
   </div>
 
@@ -175,285 +218,154 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-const API    = "https://polla-api-production.up.railway.app";
-const TOKEN  = localStorage.getItem("token");
-const NOMBRE = localStorage.getItem("nombre") || "";
-const ROL    = localStorage.getItem("rol") || "usuario";
+<script src="security.js"></script>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/apuestas.js"></script>
 
-if (!TOKEN) window.location.href = "login.html";
+<!-- ══ Match Detail Modal ══ -->
+<div class="modal fade" id="modalPartido" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content match-modal-content">
 
-document.getElementById("btn-logout").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "login.html";
-});
-
-// ── Sidebar móvil ──
-(function() {
-  const hamburger = document.getElementById("nav-hamburger");
-  const drawer    = document.getElementById("sidebar-drawer");
-  const overlay   = document.getElementById("sidebar-overlay");
-  const closeBtn  = document.getElementById("sidebar-close");
-  const logoutBtn = document.getElementById("sidebar-logout");
-  const adminLink = document.getElementById("sidebar-admin-link");
-  if (localStorage.getItem("rol") === "admin") adminLink.style.display = "flex";
-  function open()  { drawer.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow = "hidden"; }
-  function close() { drawer.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow = ""; }
-  hamburger.addEventListener("click", open);
-  overlay.addEventListener("click", close);
-  closeBtn.addEventListener("click", close);
-  logoutBtn.addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
-})();
-
-const EQUIPOS = [
-  "🇦🇷 Argentina","🇧🇷 Brasil","🇫🇷 Francia","🇪🇸 España","🇩🇪 Alemania",
-  "🇵🇹 Portugal","🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra","🇳🇱 Países Bajos","🇧🇪 Bélgica","🇺🇾 Uruguay",
-  "🇲🇽 México","🇺🇸 Estados Unidos","🇨🇦 Canadá","🇯🇵 Japón","🇰🇷 Corea del Sur",
-  "🇲🇦 Marruecos","🇸🇳 Senegal","🇨🇴 Colombia","🇨🇱 Chile","🇨🇷 Costa Rica",
-  "🇵🇱 Polonia","🇷🇸 Serbia","🇦🇺 Australia","🇬🇭 Ghana","🇸🇦 Arabia Saudita"
-];
-
-const selCampeon = document.getElementById("sel-campeon");
-EQUIPOS.forEach(eq => {
-  const opt = document.createElement("option");
-  opt.value = eq;
-  opt.textContent = eq;
-  selCampeon.appendChild(opt);
-});
-
-function toast(msg, tipo = "success") {
-  const t = document.createElement("div");
-  t.className = `toast-wc toast-${tipo}`;
-  t.textContent = msg;
-  document.getElementById("toast-container").appendChild(t);
-  setTimeout(() => t.remove(), 3500);
-}
-
-function headers() {
-  return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
-}
-
-function formatFecha(fechaStr) {
-  const d = new Date(fechaStr);
-  return d.toLocaleDateString("es-CL", {
-    weekday: "short", day: "numeric", month: "short",
-    hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Santiago"
-  });
-}
-
-function estaAbierto(partido) {
-  return !partido.finalizado && new Date() < new Date(partido.fecha);
-}
-
-async function cargarMiCampeon() {
-  try {
-    const res  = await fetch(`${API}/mi-campeon`, { headers: headers() });
-    const data = await res.json();
-    if (data.campeon) selCampeon.value = data.campeon;
-  } catch (_) {}
-}
-
-document.getElementById("btn-campeon").addEventListener("click", async () => {
-  const campeon = selCampeon.value;
-  if (!campeon) { toast("Selecciona un equipo primero", "error"); return; }
-  try {
-    const res  = await fetch(`${API}/campeon`, {
-      method: "POST", headers: headers(),
-      body: JSON.stringify({ campeon })
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || "Error al apostar campeón", "error"); return; }
-    toast(`✅ Campeón apostado: ${campeon}`);
-  } catch (_) {
-    toast("Error de conexión", "error");
-  }
-});
-
-let partidos   = [];
-let faseActiva = "";
-
-async function cargarPartidos() {
-  try {
-    const res = await fetch(`${API}/partidos`, { headers: headers() });
-    partidos  = await res.json();
-    construirTabs();
-    renderPartidos();
-  } catch (_) {
-    document.getElementById("partidos-grid").innerHTML = `
-      <div class="empty-state">
-        <span class="empty-icon">⚠️</span>
-        <h3>No se pudo cargar los partidos</h3>
-        <p>Verifica que el servidor esté activo</p>
-      </div>`;
-  }
-}
-
-function construirTabs() {
-  const fases = [...new Set(partidos.map(p => p.fase))];
-  faseActiva  = fases[0] || "";
-  const cont  = document.getElementById("tabs-fases");
-  cont.innerHTML = "";
-  fases.forEach(fase => {
-    const btn = document.createElement("button");
-    btn.className = "phase-tab" + (fase === faseActiva ? " active" : "");
-    btn.textContent = fase;
-    btn.addEventListener("click", () => {
-      faseActiva = fase;
-      cont.querySelectorAll(".phase-tab").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderPartidos();
-    });
-    cont.appendChild(btn);
-  });
-}
-
-function renderPartidos() {
-  const grid  = document.getElementById("partidos-grid");
-  const lista = partidos.filter(p => p.fase === faseActiva);
-  if (!lista.length) {
-    grid.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><h3>No hay partidos en esta fase</h3></div>`;
-    return;
-  }
-  grid.innerHTML = lista.map(p => tarjetaPartido(p)).join("");
-  lista.forEach(p => {
-    const btn = document.getElementById(`btn-apostar-${p.id}`);
-    if (btn) btn.addEventListener("click", () => registrarApuesta(p.id));
-  });
-}
-
-function tarjetaPartido(p) {
-  const abierto    = estaAbierto(p);
-  const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
-  const intentos   = p.intentos || 0;
-  const bloqueado  = yaApostado && intentos >= 2;
-  const clases     = ["match-card", p.finalizado ? "finalizado" : "", yaApostado ? "apostado" : ""].join(" ");
-
-  let puntosHTML = "";
-  if (p.finalizado && yaApostado) {
-    const pts = calcularPuntosLocal(p);
-    const cls = pts === 3 ? "pts-3" : pts === 1 ? "pts-1" : "pts-0";
-    const ico = pts === 3 ? "⭐" : pts === 1 ? "✓" : "✗";
-    puntosHTML = `<div class="text-center mt-2">
-      <span class="pts-badge ${cls}">${ico} ${pts} pt${pts !== 1 ? "s" : ""}</span>
-    </div>`;
-  }
-
-  const centroVS = p.finalizado
-    ? `<div class="result-score">${p.goles_local} - ${p.goles_visita}</div>`
-    : `<div class="vs-label">VS</div>`;
-
-  // Intento badge (only shown when match is open and user has bet)
-  const intentoBadge = abierto && yaApostado ? `
-    <div class="text-center mb-2">
-      <span class="pts-badge ${bloqueado ? 'pts-0' : 'pts-1'}" style="font-size:.7rem;padding:.2rem .6rem">
-        <i class="bi bi-${bloqueado ? 'lock-fill' : 'arrow-repeat'} me-1"></i>
-        ${bloqueado ? 'Sin intentos' : `${intentos}/2 intentos`}
-      </span>
-    </div>` : "";
-
-  let apuestaHTML;
-  if (abierto && !bloqueado) {
-    apuestaHTML = `
-    ${intentoBadge}
-    <div class="bet-inputs">
-      <input type="number" class="bet-input" min="0" max="20"
-             value="${p.goles_local_apostado ?? 0}" id="gl-${p.id}" />
-      <span class="bet-separator">–</span>
-      <input type="number" class="bet-input" min="0" max="20"
-             value="${p.goles_visita_apostado ?? 0}" id="gv-${p.id}" />
-    </div>
-    <button class="btn-fifa-green w-100" id="btn-apostar-${p.id}">
-      <i class="bi bi-${yaApostado ? 'pencil' : 'check-circle'} me-1"></i>
-      ${yaApostado ? "Actualizar apuesta" : "Apostar"}
-    </button>`;
-  } else if (abierto && bloqueado) {
-    apuestaHTML = `
-    <div class="bet-inputs">
-      <input type="number" class="bet-input" value="${p.goles_local_apostado}" disabled />
-      <span class="bet-separator">–</span>
-      <input type="number" class="bet-input" value="${p.goles_visita_apostado}" disabled />
-    </div>
-    <p class="match-closed-msg" style="color:var(--red)">
-      <i class="bi bi-lock-fill me-1"></i>Límite de 2 intentos alcanzado
-    </p>`;
-  } else if (yaApostado) {
-    apuestaHTML = `
-    <div class="bet-inputs">
-      <input type="number" class="bet-input" value="${p.goles_local_apostado}" disabled />
-      <span class="bet-separator">–</span>
-      <input type="number" class="bet-input" value="${p.goles_visita_apostado}" disabled />
-    </div>
-    <p class="match-closed-msg"><i class="bi bi-lock me-1"></i>Apuesta cerrada</p>`;
-  } else {
-    apuestaHTML = `<p class="match-closed-msg">No apostaste en este partido</p>`;
-  }
-
-  const estadioHTML = p.imagen_estadio ? `
-    <div class="match-stadium">
-      <img src="${p.imagen_estadio}" alt="${p.nombre_estadio || 'Estadio'}" loading="lazy" />
-      <div class="match-stadium-overlay">
-        <span class="match-phase-badge" style="margin:0">${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</span>
-        ${p.nombre_estadio ? `<span class="match-stadium-name">${p.nombre_estadio}</span>` : ""}
-      </div>
-    </div>` : `<div class="match-phase-badge">${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</div>`;
-
-  return `
-    <div class="${clases}">
-      ${estadioHTML}
-      <div class="match-teams" style="${p.imagen_estadio ? 'margin-top:.5rem' : ''}">
-        <div class="team-side">
-          <span class="team-flag">${p.bandera_local}</span>
-          <span class="team-name">${p.equipo_local}</span>
-        </div>
-        <div class="vs-center">${centroVS}</div>
-        <div class="team-side">
-          <span class="team-flag">${p.bandera_visita}</span>
-          <span class="team-name">${p.equipo_visita}</span>
+      <!-- Hero: stadium photo -->
+      <div class="match-modal-hero" id="modal-hero">
+        <div class="match-modal-hero-overlay">
+          <button class="match-modal-close" data-bs-dismiss="modal" type="button">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          <div class="match-modal-hero-bottom">
+            <span class="match-modal-phase-chip" id="modal-phase-chip"></span>
+            <span class="match-modal-venue" id="modal-venue"></span>
+          </div>
         </div>
       </div>
-      <div class="match-date"><i class="bi bi-calendar3 me-1"></i>${formatFecha(p.fecha)}</div>
-      ${apuestaHTML}
-      ${puntosHTML}
-    </div>`;
-}
 
-function calcularPuntosLocal(p) {
-  const gl = p.goles_local_apostado, gv = p.goles_visita_apostado;
-  const rl = p.goles_local, rv = p.goles_visita;
-  if (gl === rl && gv === rv) return 3;
-  const ganReal = rl > rv ? "L" : rv > rl ? "V" : "E";
-  const ganAp   = gl > gv ? "L" : gv > gl ? "V" : "E";
-  return ganReal === ganAp ? 1 : 0;
-}
+      <!-- Tabs nav -->
+      <div class="match-modal-tabs">
+        <ul class="nav modal-nav-tabs" id="modalTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-partido" type="button" role="tab">
+              <i class="bi bi-soccer-ball me-1"></i>Partido
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-estadio" type="button" role="tab">
+              <i class="bi bi-buildings me-1"></i>Estadio
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-equipos" type="button" role="tab">
+              <i class="bi bi-people me-1"></i>Equipos
+            </button>
+          </li>
+        </ul>
+      </div>
 
-async function registrarApuesta(idPartido) {
-  const gl = parseInt(document.getElementById(`gl-${idPartido}`).value);
-  const gv = parseInt(document.getElementById(`gv-${idPartido}`).value);
-  if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) { toast("Marcador inválido", "error"); return; }
+      <!-- Tab content -->
+      <div class="tab-content modal-tab-content">
 
-  try {
-    const res  = await fetch(`${API}/apostar`, {
-      method: "POST", headers: headers(),
-      body: JSON.stringify({ id_partido: idPartido, goles_local_apostado: gl, goles_visita_apostado: gv })
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || "Error al apostar", "error"); return; }
-    toast("✅ Apuesta guardada");
-    const idx = partidos.findIndex(p => p.id === idPartido);
-    if (idx > -1) {
-      partidos[idx].goles_local_apostado  = gl;
-      partidos[idx].goles_visita_apostado = gv;
-      partidos[idx].intentos = (partidos[idx].intentos || 0) + 1;
-    }
-    renderPartidos();
-  } catch (_) {
-    toast("Error de conexión", "error");
-  }
-}
+        <!-- Tab 1: Partido -->
+        <div class="tab-pane fade show active" id="tab-partido" role="tabpanel">
+          <div class="modal-tab-partido">
+            <div class="match-modal-teams-row">
+              <div class="modal-team-block">
+                <span class="modal-team-flag" id="modal-flag-l"></span>
+                <span class="modal-team-name" id="modal-name-l"></span>
+              </div>
+              <div class="modal-center-block">
+                <div id="modal-center-score"></div>
+                <div class="modal-match-date" id="modal-date-str"></div>
+                <div id="modal-status-block"></div>
+              </div>
+              <div class="modal-team-block">
+                <span class="modal-team-flag" id="modal-flag-v"></span>
+                <span class="modal-team-name" id="modal-name-v"></span>
+              </div>
+            </div>
+          </div>
+          <div class="match-modal-bet-section" id="modal-bet-area"></div>
+        </div>
 
-cargarPartidos();
-cargarMiCampeon();
-</script>
+        <!-- Tab 2: Estadio -->
+        <div class="tab-pane fade" id="tab-estadio" role="tabpanel">
+          <div class="modal-tab-estadio" id="modal-estadio-content"></div>
+        </div>
+
+        <!-- Tab 3: Equipos -->
+        <div class="tab-pane fade" id="tab-equipos" role="tabpanel">
+          <div class="modal-tab-equipos" id="modal-equipos-content"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+
+    <div class="footer-brand-col">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <img src="img/fifa2026-logo.png" class="footer-logo" alt="FIFA 2026" />
+        <div class="footer-brand-name">JUEGA <span>FIFA WORLD CUP</span> 2026</div>
+      </div>
+      <p class="footer-tagline">Predice los marcadores de cada partido, apuesta al campeón y demuestra que eres el mayor experto futbolero de tu grupo.</p>
+      <div class="footer-host-row">
+        <span title="Estados Unidos">🇺🇸</span>
+        <span title="Canadá">🇨🇦</span>
+        <span title="México">🇲🇽</span>
+        <span class="footer-host-date">11 Jun – 19 Jul 2026</span>
+      </div>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">El Torneo</h4>
+      <ul class="footer-info-list">
+        <li><i class="bi bi-calendar3-event"></i> 11 junio – 19 julio 2026</li>
+        <li><i class="bi bi-flag-fill"></i> 48 selecciones nacionales</li>
+        <li><i class="bi bi-dribbble"></i> 104 partidos en total</li>
+        <li><i class="bi bi-geo-alt-fill"></i> 16 sedes · 3 países anfitriones</li>
+        <li><i class="bi bi-trophy-fill"></i> Final: 19 jul · MetLife Stadium NJ</li>
+        <li><i class="bi bi-people-fill"></i> ~5,5 millones de espectadores</li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">Juega FIFA 2026</h4>
+      <ul class="footer-links-list">
+        <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
+        <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
+        <li><a href="perfil.html"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">Links Oficiales</h4>
+      <ul class="footer-links-list">
+        <li><a href="https://www.fifa.com" target="_blank" rel="noopener"><i class="bi bi-globe2"></i> FIFA.com</a></li>
+        <li><a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener"><i class="bi bi-soccer-ball"></i> Copa Mundial 2026</a></li>
+        <li><a href="https://www.conmebol.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> CONMEBOL</a></li>
+        <li><a href="https://www.uefa.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> UEFA</a></li>
+        <li><a href="https://www.fifatickets.com" target="_blank" rel="noopener"><i class="bi bi-ticket-perforated"></i> Entradas FIFA</a></li>
+      </ul>
+      <div class="footer-social-row">
+        <a href="https://twitter.com/FIFAWorldCup" target="_blank" rel="noopener" class="footer-social-btn" title="Twitter / X"><i class="bi bi-twitter-x"></i></a>
+        <a href="https://www.instagram.com/fifaworldcup/" target="_blank" rel="noopener" class="footer-social-btn" title="Instagram"><i class="bi bi-instagram"></i></a>
+        <a href="https://www.youtube.com/FIFA" target="_blank" rel="noopener" class="footer-social-btn" title="YouTube"><i class="bi bi-youtube"></i></a>
+        <a href="https://www.facebook.com/fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://www.tiktok.com/@fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="TikTok"><i class="bi bi-tiktok"></i></a>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-bottom-inner">
+      <span class="footer-copy">© 2026 Juega FIFA World Cup 2026 — Proyecto independiente no afiliado a FIFA.</span>
+      <span class="footer-disclaimer">FIFA™, FIFA World Cup™ y el trofeo de la Copa Mundial son marcas registradas de la Fédération Internationale de Football Association.</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

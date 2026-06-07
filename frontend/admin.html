@@ -3,11 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polla FIFA 2026 — Panel Admin</title>
+  <title>Juega FIFA World Cup 2026 — Panel Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://polla-api-production.up.railway.app;">
   <style>
+    #accordion-votos .accordion-button,
+    #accordion-votos .accordion-button.collapsed,
+    #accordion-votos .accordion-body,
+    #accordion-votos .accordion-body td,
+    #accordion-votos .accordion-body tr {
+      color: #e8eef7 !important;
+    }
+    #accordion-votos .accordion-button::after { filter: invert(1) brightness(1.5); }
+    #accordion-votos .accordion-item { border: 1px solid rgba(255,255,255,.1) !important; }
+
     .action-btn {
       display: inline-flex;
       align-items: center;
@@ -60,6 +71,7 @@
   <div class="d-flex align-items-center gap-2">
     <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
     <a class="navbar-brand-wc" href="admin.html">
+      <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
       JUEGA <span>FIFA WORLD CUP</span> 2026
       <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
       <span class="badge-admin ms-2">ADMIN</span>
@@ -278,6 +290,19 @@
     </div>
   </div>
 
+  <!-- Votos registrados -->
+  <div class="mt-5">
+    <div class="admin-card-title mb-3">
+      <i class="bi bi-check2-circle" style="color:var(--gold)"></i> Votos registrados
+    </div>
+    <div id="lista-votos">
+      <div class="empty-state">
+        <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
+        <h3 style="margin-top:1rem">Cargando...</h3>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ MODAL EDITAR PARTIDO ══ -->
@@ -472,543 +497,75 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  const API   = "https://polla-api-production.up.railway.app";
-  const TOKEN = localStorage.getItem("token");
-  const ROL   = localStorage.getItem("rol");
+<script src="security.js"></script>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/admin.js"></script>
 
-  if (!TOKEN || ROL !== "admin") window.location.href = "login.html";
+<footer class="site-footer">
+  <div class="footer-inner">
 
-  document.getElementById("btn-logout").addEventListener("click", () => {
-    localStorage.clear();
-    window.location.href = "login.html";
-  });
+    <div class="footer-brand-col">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <img src="img/fifa2026-logo.png" class="footer-logo" alt="FIFA 2026" />
+        <div class="footer-brand-name">JUEGA <span>FIFA WORLD CUP</span> 2026</div>
+      </div>
+      <p class="footer-tagline">Predice los marcadores de cada partido, apuesta al campeón y demuestra que eres el mayor experto futbolero de tu grupo.</p>
+      <div class="footer-host-row">
+        <span title="Estados Unidos">🇺🇸</span>
+        <span title="Canadá">🇨🇦</span>
+        <span title="México">🇲🇽</span>
+        <span class="footer-host-date">11 Jun – 19 Jul 2026</span>
+      </div>
+    </div>
 
-  // ── Sidebar móvil ──
-  (function() {
-    const hamburger = document.getElementById("nav-hamburger");
-    const drawer    = document.getElementById("sidebar-drawer");
-    const overlay   = document.getElementById("sidebar-overlay");
-    const closeBtn  = document.getElementById("sidebar-close");
-    const logoutBtn = document.getElementById("sidebar-logout");
-    function open()  { drawer.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow = "hidden"; }
-    function close() { drawer.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow = ""; }
-    hamburger.addEventListener("click", open);
-    overlay.addEventListener("click", close);
-    closeBtn.addEventListener("click", close);
-    logoutBtn.addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
-  })();
+    <div>
+      <h4 class="footer-heading">El Torneo</h4>
+      <ul class="footer-info-list">
+        <li><i class="bi bi-calendar3-event"></i> 11 junio – 19 julio 2026</li>
+        <li><i class="bi bi-flag-fill"></i> 48 selecciones nacionales</li>
+        <li><i class="bi bi-dribbble"></i> 104 partidos en total</li>
+        <li><i class="bi bi-geo-alt-fill"></i> 16 sedes · 3 países anfitriones</li>
+        <li><i class="bi bi-trophy-fill"></i> Final: 19 jul · MetLife Stadium NJ</li>
+        <li><i class="bi bi-people-fill"></i> ~5,5 millones de espectadores</li>
+      </ul>
+    </div>
 
-  function headers() {
-    return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
-  }
+    <div>
+      <h4 class="footer-heading">Juega FIFA 2026</h4>
+      <ul class="footer-links-list">
+        <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
+        <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
+        <li><a href="perfil.html"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
+      </ul>
+    </div>
 
-  function toast(msg, tipo = "success") {
-    const t = document.createElement("div");
-    t.className = `toast-wc toast-${tipo}`;
-    t.textContent = msg;
-    document.getElementById("toast-container").appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }
+    <div>
+      <h4 class="footer-heading">Links Oficiales</h4>
+      <ul class="footer-links-list">
+        <li><a href="https://www.fifa.com" target="_blank" rel="noopener"><i class="bi bi-globe2"></i> FIFA.com</a></li>
+        <li><a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener"><i class="bi bi-soccer-ball"></i> Copa Mundial 2026</a></li>
+        <li><a href="https://www.conmebol.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> CONMEBOL</a></li>
+        <li><a href="https://www.uefa.com" target="_blank" rel="noopener"><i class="bi bi-shield-fill"></i> UEFA</a></li>
+        <li><a href="https://www.fifatickets.com" target="_blank" rel="noopener"><i class="bi bi-ticket-perforated"></i> Entradas FIFA</a></li>
+      </ul>
+      <div class="footer-social-row">
+        <a href="https://twitter.com/FIFAWorldCup" target="_blank" rel="noopener" class="footer-social-btn" title="Twitter / X"><i class="bi bi-twitter-x"></i></a>
+        <a href="https://www.instagram.com/fifaworldcup/" target="_blank" rel="noopener" class="footer-social-btn" title="Instagram"><i class="bi bi-instagram"></i></a>
+        <a href="https://www.youtube.com/FIFA" target="_blank" rel="noopener" class="footer-social-btn" title="YouTube"><i class="bi bi-youtube"></i></a>
+        <a href="https://www.facebook.com/fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://www.tiktok.com/@fifaworldcup" target="_blank" rel="noopener" class="footer-social-btn" title="TikTok"><i class="bi bi-tiktok"></i></a>
+      </div>
+    </div>
 
-  function msgOk(id, msg) {
-    const el = document.getElementById(id);
-    el.className = "msg-ok";
-    el.innerHTML = `<i class="bi bi-check-circle me-1"></i>${msg}`;
-  }
-  function msgErr(id, msg) {
-    const el = document.getElementById(id);
-    el.className = "msg-err";
-    el.innerHTML = `<i class="bi bi-x-circle me-1"></i>${msg}`;
-  }
-  function msgClear(id) {
-    const el = document.getElementById(id);
-    el.className = "";
-    el.textContent = "";
-  }
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-bottom-inner">
+      <span class="footer-copy">© 2026 Juega FIFA World Cup 2026 — Proyecto independiente no afiliado a FIFA.</span>
+      <span class="footer-disclaimer">FIFA™, FIFA World Cup™ y el trofeo de la Copa Mundial son marcas registradas de la Fédération Internationale de Football Association.</span>
+    </div>
+  </div>
+</footer>
 
-  // ── CARGAR PARTIDOS ───────────────────────────────────────
-  let partidos = [];
-  async function cargarPartidos() {
-    try {
-      const res = await fetch(`${API}/partidos`, { headers: headers() });
-      partidos  = await res.json();
-      llenarSelectPartidos();
-      renderListaPartidos();
-    } catch (_) {}
-  }
-
-  function llenarSelectPartidos() {
-    const sel = document.getElementById("sel-partido");
-    sel.innerHTML = '<option value="">— Selecciona un partido —</option>';
-    partidos.filter(p => !p.finalizado).forEach(p => {
-      const opt = document.createElement("option");
-      opt.value = p.id;
-      opt.textContent = `${p.bandera_local} ${p.equipo_local} vs ${p.bandera_visita} ${p.equipo_visita}`;
-      sel.appendChild(opt);
-    });
-  }
-
-  function renderListaPartidos() {
-    if (!partidos.length) {
-      document.getElementById("lista-partidos").innerHTML =
-        '<div class="empty-state"><span class="empty-icon">📭</span><h3>No hay partidos todavía</h3></div>';
-      return;
-    }
-    const filas = partidos.map(p => `
-      <tr>
-        <td>${p.bandera_local} ${p.equipo_local} <span style="color:var(--text-sub)">vs</span> ${p.bandera_visita} ${p.equipo_visita}</td>
-        <td>
-          <span class="phase-tab active" style="pointer-events:none;padding:.2rem .7rem;font-size:.72rem">${p.fase}</span>
-          ${p.grupo ? `<span style="font-size:.72rem;color:var(--text-sub);margin-left:.3rem">${p.grupo}</span>` : ""}
-        </td>
-        <td style="color:var(--text-sub);font-size:.85rem">${new Date(p.fecha).toLocaleString("es-CL", { timeZone: "America/Santiago" })}</td>
-        <td>${p.finalizado
-          ? `<strong style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px">${p.goles_local} – ${p.goles_visita}</strong>`
-          : '<span style="color:var(--text-sub)"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>'}</td>
-        <td>
-          <button class="action-btn action-btn-edit me-1" onclick="abrirEditar(${p.id})" title="Editar partido">
-            <i class="bi bi-pencil-fill"></i>
-          </button>
-          <button class="action-btn action-btn-delete" onclick="eliminarPartido(${p.id})" title="Eliminar partido">
-            <i class="bi bi-trash-fill"></i>
-          </button>
-        </td>
-      </tr>`).join("");
-
-    document.getElementById("lista-partidos").innerHTML = `
-      <div class="ranking-card">
-        <div style="overflow-x:auto">
-          <table class="ranking-table">
-            <thead><tr><th>Partido</th><th>Fase</th><th>Fecha</th><th>Resultado</th><th style="text-align:center">Acciones</th></tr></thead>
-            <tbody>${filas}</tbody>
-          </table>
-        </div>
-      </div>`;
-  }
-
-  // Mostrar grupo solo cuando fase = Grupos
-  function syncGrupoVisibility(faseId, wrapId) {
-    const fase = document.getElementById(faseId).value;
-    document.getElementById(wrapId).style.display = fase === "Grupos" ? "" : "none";
-  }
-  document.getElementById("fase-partido").addEventListener("change", () => syncGrupoVisibility("fase-partido", "wrap-grupo-crear"));
-  document.getElementById("edit-fase").addEventListener("change",    () => syncGrupoVisibility("edit-fase",    "wrap-grupo-editar"));
-  syncGrupoVisibility("fase-partido", "wrap-grupo-crear");
-
-  // ── IMAGEN ESTADIO — helpers ───────────────────────────────
-  let estadioCrearBase64  = null;
-  let estadioEditarBase64 = null;
-  let estadioEditarCambio = false;
-
-  function setupImagenEstadio({ fileInputId, pickBtnId, urlInputId, previewWrapId, previewImgId, clearBtnId, onLoad }) {
-    const fileInput  = document.getElementById(fileInputId);
-    const pickBtn    = document.getElementById(pickBtnId);
-    const urlInput   = document.getElementById(urlInputId);
-    const previewWrap= document.getElementById(previewWrapId);
-    const previewImg = document.getElementById(previewImgId);
-    const clearBtn   = document.getElementById(clearBtnId);
-
-    pickBtn.addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        previewImg.src = e.target.result;
-        previewWrap.style.display = "";
-        urlInput.value = "";
-        onLoad(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    urlInput.addEventListener("input", () => {
-      const url = urlInput.value.trim();
-      if (url) { previewImg.src = url; previewWrap.style.display = ""; onLoad(null); }
-      else     { previewWrap.style.display = "none"; onLoad(null); }
-    });
-
-    clearBtn.addEventListener("click", () => {
-      fileInput.value = "";
-      urlInput.value  = "";
-      previewImg.src  = "";
-      previewWrap.style.display = "none";
-      onLoad(null);
-    });
-  }
-
-  setupImagenEstadio({
-    fileInputId: "file-estadio", pickBtnId: "btn-pick-estadio",
-    urlInputId: "url-estadio", previewWrapId: "preview-estadio-crear",
-    previewImgId: "img-preview-estadio-crear", clearBtnId: "btn-clear-estadio-crear",
-    onLoad: (b64) => { estadioCrearBase64 = b64; }
-  });
-
-  setupImagenEstadio({
-    fileInputId: "edit-file-estadio", pickBtnId: "btn-edit-pick-estadio",
-    urlInputId: "edit-url-estadio", previewWrapId: "preview-estadio-editar",
-    previewImgId: "img-preview-estadio-editar", clearBtnId: "btn-clear-estadio-editar",
-    onLoad: (b64) => { estadioEditarBase64 = b64; estadioEditarCambio = true; }
-  });
-
-  // ── CREAR ─────────────────────────────────────────────────
-  document.getElementById("btn-crear").addEventListener("click", async () => {
-    const eqL  = document.getElementById("eq-local").value.trim();
-    const eqV  = document.getElementById("eq-visita").value.trim();
-    const flL  = document.getElementById("flag-local").value.trim();
-    const flV  = document.getElementById("flag-visita").value.trim();
-    const fech = document.getElementById("fecha-partido").value;
-    const fase = document.getElementById("fase-partido").value;
-    const grupo = fase === "Grupos" ? document.getElementById("grupo-partido").value : "";
-
-    if (!eqL || !eqV || !fech) { msgErr("msg-crear", "Completa los campos obligatorios"); return; }
-
-    try {
-      const res  = await fetch(`${API}/admin/partido`, {
-        method: "POST", headers: headers(),
-        body: JSON.stringify({
-          equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV,
-          fecha: fech, fase, grupo,
-          nombre_estadio: document.getElementById("nombre-estadio").value.trim(),
-          imagen_estadio: estadioCrearBase64 || document.getElementById("url-estadio").value.trim() || null
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) { msgErr("msg-crear", data.error); return; }
-      msgOk("msg-crear", "Partido creado correctamente");
-      toast("✅ Partido creado");
-      // Limpiar formulario
-      ["eq-local","eq-visita","flag-local","flag-visita","fecha-partido","nombre-estadio","url-estadio"].forEach(id => {
-        document.getElementById(id).value = "";
-      });
-      estadioCrearBase64 = null;
-      document.getElementById("preview-estadio-crear").style.display = "none";
-      cargarPartidos();
-    } catch (_) { msgErr("msg-crear", "Error de conexión"); }
-  });
-
-  // ── EDITAR ────────────────────────────────────────────────
-  let modalEditar;
-  document.addEventListener("DOMContentLoaded", () => {
-    modalEditar = new bootstrap.Modal(document.getElementById("modal-editar"));
-  });
-
-  function abrirEditar(id) {
-    const p = partidos.find(x => x.id === id);
-    if (!p) return;
-    document.getElementById("edit-id").value          = p.id;
-    document.getElementById("edit-eq-local").value    = p.equipo_local;
-    document.getElementById("edit-eq-visita").value   = p.equipo_visita;
-    document.getElementById("edit-flag-local").value  = p.bandera_local  || "";
-    document.getElementById("edit-flag-visita").value = p.bandera_visita || "";
-    document.getElementById("edit-fecha").value       = p.fecha ? p.fecha.slice(0, 16) : "";
-    document.getElementById("edit-fase").value        = p.fase;
-    document.getElementById("edit-grupo").value          = p.grupo || "";
-    document.getElementById("edit-nombre-estadio").value = p.nombre_estadio || "";
-    // Imagen estadio
-    estadioEditarBase64 = null; estadioEditarCambio = false;
-    const prevEdit = document.getElementById("preview-estadio-editar");
-    const imgEdit  = document.getElementById("img-preview-estadio-editar");
-    document.getElementById("edit-url-estadio").value = "";
-    if (p.imagen_estadio) { imgEdit.src = p.imagen_estadio; prevEdit.style.display = ""; }
-    else                  { imgEdit.src = ""; prevEdit.style.display = "none"; }
-    // Resultado
-    const finalizado = !!p.finalizado;
-    document.getElementById("edit-finalizado").checked      = finalizado;
-    document.getElementById("edit-goles-local").value       = p.goles_local  ?? 0;
-    document.getElementById("edit-goles-visita").value      = p.goles_visita ?? 0;
-    document.getElementById("wrap-resultado-editar").style.display = finalizado ? "" : "none";
-    syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
-    msgClear("msg-editar");
-    modalEditar.show();
-  }
-
-  document.getElementById("edit-finalizado").addEventListener("change", () => {
-    document.getElementById("wrap-resultado-editar").style.display =
-      document.getElementById("edit-finalizado").checked ? "" : "none";
-  });
-
-  document.getElementById("btn-guardar-editar").addEventListener("click", async () => {
-    const id   = document.getElementById("edit-id").value;
-    const eqL  = document.getElementById("edit-eq-local").value.trim();
-    const eqV  = document.getElementById("edit-eq-visita").value.trim();
-    const flL  = document.getElementById("edit-flag-local").value.trim();
-    const flV  = document.getElementById("edit-flag-visita").value.trim();
-    const fech = document.getElementById("edit-fecha").value;
-    const fase = document.getElementById("edit-fase").value;
-    const grupo = fase === "Grupos" ? document.getElementById("edit-grupo").value : "";
-
-    if (!eqL || !eqV || !fech) { msgErr("msg-editar", "Completa los campos obligatorios"); return; }
-
-    const finalizado  = document.getElementById("edit-finalizado").checked;
-    const golesLocal  = parseInt(document.getElementById("edit-goles-local").value)  || 0;
-    const golesVisita = parseInt(document.getElementById("edit-goles-visita").value) || 0;
-
-    const btn = document.getElementById("btn-guardar-editar");
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
-    try {
-      const res  = await fetch(`${API}/admin/partido/${id}`, {
-        method: "PUT", headers: headers(),
-        body: JSON.stringify({
-          equipo_local: eqL, equipo_visita: eqV, bandera_local: flL, bandera_visita: flV,
-          fecha: fech, fase, grupo, finalizado, goles_local: golesLocal, goles_visita: golesVisita,
-          nombre_estadio: document.getElementById("edit-nombre-estadio").value.trim(),
-          ...(estadioEditarCambio ? { imagen_estadio: estadioEditarBase64 || document.getElementById("edit-url-estadio").value.trim() || null } : {})
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const errMsg = data.error || `Error ${res.status}`;
-        msgErr("msg-editar", errMsg);
-        toast(errMsg, "error");
-        return;
-      }
-      toast("✅ Partido actualizado");
-      modalEditar.hide();
-      cargarPartidos();
-    } catch (e) {
-      const errMsg = "Error de conexión: " + e.message;
-      msgErr("msg-editar", errMsg);
-      toast(errMsg, "error");
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar cambios';
-    }
-  });
-
-  // ── ELIMINAR ──────────────────────────────────────────────
-  async function eliminarPartido(id) {
-    const p = partidos.find(x => x.id === id);
-    if (!p) return;
-    const ok = confirm(
-      `¿Eliminar "${p.equipo_local} vs ${p.equipo_visita}"?\n` +
-      `Se eliminarán también todas las apuestas asociadas. Esta acción no se puede deshacer.`
-    );
-    if (!ok) return;
-
-    try {
-      const res  = await fetch(`${API}/admin/partido/${id}`, {
-        method: "DELETE", headers: headers()
-      });
-      const data = await res.json();
-      if (!res.ok) { toast(data.error || `Error ${res.status}`, "error"); return; }
-      toast("🗑️ Partido eliminado");
-      cargarPartidos();
-    } catch (e) {
-      toast("Error de conexión: " + e.message, "error");
-    }
-  }
-
-  // ── RESULTADO ─────────────────────────────────────────────
-  document.getElementById("btn-resultado").addEventListener("click", async () => {
-    const idPartido = document.getElementById("sel-partido").value;
-    const gl = parseInt(document.getElementById("res-local").value);
-    const gv = parseInt(document.getElementById("res-visita").value);
-
-    if (!idPartido) { msgErr("msg-resultado", "Selecciona un partido"); return; }
-
-    const confirmar = confirm(`¿Confirmas el resultado ${gl} - ${gv}?\nEsta acción calculará los puntos de todos los usuarios.`);
-    if (!confirmar) return;
-
-    try {
-      const res  = await fetch(`${API}/admin/resultado/${idPartido}`, {
-        method: "PUT", headers: headers(),
-        body: JSON.stringify({ goles_local: gl, goles_visita: gv })
-      });
-      const data = await res.json();
-      if (!res.ok) { msgErr("msg-resultado", data.error); return; }
-      msgOk("msg-resultado", "Resultado ingresado y puntos calculados");
-      toast("✅ Resultado registrado");
-      cargarPartidos();
-    } catch (_) { msgErr("msg-resultado", "Error de conexión"); }
-  });
-
-  // ── CAMPEÓN REAL ──────────────────────────────────────────
-  document.getElementById("btn-campeon-real").addEventListener("click", async () => {
-    const campeon = document.getElementById("campeon-real").value.trim();
-    if (!campeon) { msgErr("msg-campeon", "Ingresa el nombre del campeón"); return; }
-
-    const confirmar = confirm(`¿Confirmas que el campeón es "${campeon}"?\nSe asignarán 5 puntos a quienes lo acertaron.`);
-    if (!confirmar) return;
-
-    try {
-      const res  = await fetch(`${API}/admin/campeon-real`, {
-        method: "PUT", headers: headers(),
-        body: JSON.stringify({ campeon })
-      });
-      const data = await res.json();
-      if (!res.ok) { msgErr("msg-campeon", data.error); return; }
-      msgOk("msg-campeon", data.mensaje);
-      toast("🏆 Campeón registrado");
-    } catch (_) { msgErr("msg-campeon", "Error de conexión"); }
-  });
-
-  cargarPartidos();
-
-  // ── USUARIOS ──────────────────────────────────────────────
-  let modalUsuario;
-  document.addEventListener("DOMContentLoaded", () => {
-    modalUsuario = new bootstrap.Modal(document.getElementById("modal-usuario"));
-  });
-
-  // Show/hide password
-  document.getElementById("btn-toggle-usuario-pw").addEventListener("click", () => {
-    const inp  = document.getElementById("usuario-password");
-    const icon = document.getElementById("icon-toggle-usuario-pw");
-    if (inp.type === "password") { inp.type = "text";     icon.className = "bi bi-eye-slash"; }
-    else                         { inp.type = "password"; icon.className = "bi bi-eye"; }
-  });
-
-  async function cargarUsuarios() {
-    try {
-      const res = await fetch(`${API}/admin/usuarios`, { headers: headers() });
-      const usuarios = await res.json();
-      renderTablaUsuarios(usuarios);
-    } catch (_) {
-      document.getElementById("lista-usuarios").innerHTML =
-        '<div class="empty-state"><span class="empty-icon">⚠️</span><h3>Error al cargar usuarios</h3></div>';
-    }
-  }
-
-  function renderTablaUsuarios(usuarios) {
-    if (!usuarios.length) {
-      document.getElementById("lista-usuarios").innerHTML =
-        '<div class="empty-state"><span class="empty-icon">👤</span><h3>No hay usuarios registrados</h3></div>';
-      return;
-    }
-
-    const ME = parseInt(localStorage.getItem("id") || "0");
-
-    const filas = usuarios.map(u => {
-      const avatarHtml = u.foto_perfil
-        ? `<img src="${u.foto_perfil}" alt="${u.nombre}"
-               style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" />`
-        : `<span style="width:38px;height:38px;border-radius:50%;background:rgba(245,184,0,.15);border:2px solid rgba(245,184,0,.3);
-               display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem">
-             <i class="bi bi-person-fill"></i></span>`;
-      const rolBadge = u.rol === "admin"
-        ? `<span style="background:rgba(245,184,0,.18);color:var(--gold);border:1px solid rgba(245,184,0,.35);
-               border-radius:4px;padding:.15rem .55rem;font-size:.72rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.5px">ADMIN</span>`
-        : `<span style="background:rgba(255,255,255,.07);color:var(--text-sub);border:1px solid rgba(255,255,255,.15);
-               border-radius:4px;padding:.15rem .55rem;font-size:.72rem">usuario</span>`;
-      const esSelf = u.id === ME ? `<span style="font-size:.7rem;color:var(--text-sub);margin-left:.4rem">(tú)</span>` : "";
-      return `
-        <tr>
-          <td style="width:48px">${avatarHtml}</td>
-          <td>${u.nombre}${esSelf}</td>
-          <td style="color:var(--text-sub);font-size:.85rem">${u.email}</td>
-          <td>${rolBadge}</td>
-          <td>
-            <button class="action-btn action-btn-edit me-1" onclick="abrirEditarUsuario(${u.id})" title="Editar usuario">
-              <i class="bi bi-pencil-fill"></i>
-            </button>
-            <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g, "\\'")}')" title="Eliminar usuario"
-              ${u.id === ME ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}>
-              <i class="bi bi-trash-fill"></i>
-            </button>
-          </td>
-        </tr>`;
-    }).join("");
-
-    document.getElementById("lista-usuarios").innerHTML = `
-      <div class="ranking-card">
-        <div style="overflow-x:auto">
-          <table class="ranking-table">
-            <thead><tr><th></th><th>Nombre</th><th>Email</th><th>Rol</th><th style="text-align:center">Acciones</th></tr></thead>
-            <tbody>${filas}</tbody>
-          </table>
-        </div>
-      </div>`;
-  }
-
-  // Abrir modal para crear
-  document.getElementById("btn-nuevo-usuario").addEventListener("click", () => {
-    document.getElementById("usuario-edit-id").value = "";
-    document.getElementById("usuario-nombre").value  = "";
-    document.getElementById("usuario-email").value   = "";
-    document.getElementById("usuario-rol").value     = "usuario";
-    document.getElementById("usuario-password").value = "";
-    document.getElementById("modal-usuario-titulo-texto").textContent = "Nuevo usuario";
-    document.getElementById("usuario-pw-label").textContent = "Contraseña";
-    document.getElementById("usuario-pw-hint").style.display = "none";
-    document.getElementById("usuario-password").placeholder = "Mín. 8 caracteres";
-    msgClear("msg-usuario");
-    modalUsuario.show();
-  });
-
-  // Abrir modal para editar
-  let usuariosCache = [];
-  async function abrirEditarUsuario(id) {
-    // Obtener datos frescos
-    const res = await fetch(`${API}/admin/usuarios`, { headers: headers() });
-    usuariosCache = await res.json();
-    const u = usuariosCache.find(x => x.id === id);
-    if (!u) return;
-    document.getElementById("usuario-edit-id").value = u.id;
-    document.getElementById("usuario-nombre").value  = u.nombre;
-    document.getElementById("usuario-email").value   = u.email;
-    document.getElementById("usuario-rol").value     = u.rol;
-    document.getElementById("usuario-password").value = "";
-    document.getElementById("modal-usuario-titulo-texto").textContent = "Editar usuario";
-    document.getElementById("usuario-pw-label").textContent = "Nueva contraseña (opcional)";
-    document.getElementById("usuario-pw-hint").style.display = "";
-    document.getElementById("usuario-password").placeholder = "Dejar en blanco para no cambiar";
-    msgClear("msg-usuario");
-    modalUsuario.show();
-  }
-
-  // Guardar (crear o editar)
-  document.getElementById("btn-guardar-usuario").addEventListener("click", async () => {
-    const id       = document.getElementById("usuario-edit-id").value;
-    const nombre   = document.getElementById("usuario-nombre").value.trim();
-    const email    = document.getElementById("usuario-email").value.trim();
-    const rol      = document.getElementById("usuario-rol").value;
-    const password = document.getElementById("usuario-password").value;
-    const esNuevo  = !id;
-
-    if (!nombre || !email) { msgErr("msg-usuario", "Nombre y email son obligatorios"); return; }
-    if (esNuevo && !password) { msgErr("msg-usuario", "La contraseña es obligatoria"); return; }
-
-    const body = { nombre, email, rol };
-    if (password) body.password = password;
-
-    const btn = document.getElementById("btn-guardar-usuario");
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
-    try {
-      const res = await fetch(
-        esNuevo ? `${API}/admin/usuario` : `${API}/admin/usuario/${id}`,
-        { method: esNuevo ? "POST" : "PUT", headers: headers(), body: JSON.stringify(body) }
-      );
-      const data = await res.json();
-      if (!res.ok) { msgErr("msg-usuario", data.error); return; }
-      toast(esNuevo ? "✅ Usuario creado" : "✅ Usuario actualizado");
-      modalUsuario.hide();
-      cargarUsuarios();
-    } catch (_) { msgErr("msg-usuario", "Error de conexión"); }
-    finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
-    }
-  });
-
-  // Eliminar usuario
-  async function eliminarUsuario(id, nombre) {
-    const ok = confirm(`¿Eliminar al usuario "${nombre}"?\nSe eliminarán también todas sus apuestas. Esta acción no se puede deshacer.`);
-    if (!ok) return;
-    try {
-      const res  = await fetch(`${API}/admin/usuario/${id}`, { method: "DELETE", headers: headers() });
-      const data = await res.json();
-      if (!res.ok) { toast(data.error || `Error ${res.status}`, "error"); return; }
-      toast("🗑️ Usuario eliminado");
-      cargarUsuarios();
-    } catch (_) { toast("Error de conexión", "error"); }
-  }
-
-  cargarUsuarios();
-</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JUEGA FIFA WORLD CUP 2026 — Iniciar sesión</title>
+  <title>Juega FIFA World Cup 2026 — Iniciar sesión</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -99,7 +99,7 @@
   <div class="auth-split-form">
     <div class="auth-card w-100" style="max-width:380px">
       <div class="auth-logo">
-        <span class="trophy">🏆</span>
+        <img src="img/fifa2026-logo.png" class="trophy" alt="FIFA 2026" />
         <h1>JUEGA <span>FIFA WORLD CUP</span> 2026</h1>
         <p>Ingresa a tu cuenta para apostar</p>
       </div>
@@ -138,6 +138,14 @@
 <script>
   const API = "https://polla-api-production.up.railway.app";
   if (localStorage.getItem("token")) window.location.href = "index.html";
+
+  // Mostrar aviso si la sesión expiró por inactividad
+  if (new URLSearchParams(window.location.search).get("expired") === "1") {
+    document.addEventListener("DOMContentLoaded", () => {
+      const errorMsg = document.getElementById("error-msg");
+      if (errorMsg) { errorMsg.textContent = "⏱ Sesión cerrada por inactividad. Inicia sesión nuevamente."; errorMsg.classList.add("visible"); }
+    });
+  }
 
   const form     = document.getElementById("login-form");
   const btnLogin = document.getElementById("btn-login");
