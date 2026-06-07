@@ -47,7 +47,7 @@ _HDR = (
     '<div style="background:linear-gradient(135deg,#060e1c,#0a1e3d);'
     'padding:1.25rem 1.5rem;border-bottom:2px solid #F5B800;text-align:center">'
     '<h2 style="color:#F5B800;font-size:1.3rem;margin:0;letter-spacing:2px">'
-    '&#9917; POLLA FIFA WORLD CUP 2026</h2></div>'
+    '&#9917; JUEGA FIFA WORLD CUP 2026</h2></div>'
     '<div style="padding:1.5rem">'
 )
 _FTR = (
@@ -93,7 +93,7 @@ def send_bet_reminder(to_email, nombre, partido):
         f"El partido comienza el {fecha_str}.\n\n"
         f"Recuerda: las apuestas se cierran 24 horas antes del inicio.\n"
         f"Ingresa en: {url}\n\n"
-        f"Polla FIFA World Cup 2026"
+        f"Juega FIFA World Cup 2026"
     )
     html = (
         _HDR
@@ -122,7 +122,7 @@ def send_result_notification(to_email, nombre, partido_row):
     pts_str = ("" if pts is None
                else f"{pts} punto{'s' if pts != 1 else ''}")
 
-    subject = f"Resultado: {local} {gl}-{gv} {visita} | Polla FIFA 2026"
+    subject = f"Resultado: {local} {gl}-{gv} {visita} | Juega FIFA 2026"
     url     = FRONTEND_URL + "/ranking.html"
 
     apuesta_html = ""
@@ -146,7 +146,7 @@ def send_result_notification(to_email, nombre, partido_row):
         f"Tu apuesta: {partido_row.get('goles_local_apostado')} - "
         f"{partido_row.get('goles_visita_apostado')}\n"
         f"Puntos: {pts_str}\n\n"
-        f"Ver ranking actualizado: {url}\n\nPolla FIFA 2026"
+        f"Ver ranking actualizado: {url}\n\nJuega FIFA 2026"
     )
     html = (
         _HDR

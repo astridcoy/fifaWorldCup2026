@@ -40,14 +40,14 @@ def solo_admin(f):
 def send_reset_email(to_email, token):
     link = f"{FRONTEND_URL}/reset-password.html?token={token}"
     msg  = MIMEMultipart("alternative")
-    msg["Subject"] = "Recupera tu contraseña — Polla FIFA 2026"
+    msg["Subject"] = "Recupera tu contraseña — Juega FIFA 2026"
     msg["From"]    = SMTP_FROM
     msg["To"]      = to_email
 
     text = (f"Hola,\n\nHaz clic en este enlace para restablecer tu contraseña:\n{link}\n\n"
             "El enlace expira en 1 hora.\n\nSi no solicitaste este cambio, ignora este mensaje.")
     html = f"""<div style="font-family:sans-serif;max-width:480px;margin:auto">
-<h2 style="color:#E8192C">Polla FIFA 2026 🏆</h2>
+<h2 style="color:#E8192C">Juega FIFA 2026 🏆</h2>
 <p>Haz clic en el botón para restablecer tu contraseña:</p>
 <a href="{link}" style="display:inline-block;padding:12px 24px;background:#E8192C;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Restablecer contraseña</a>
 <p style="margin-top:16px;color:#666;font-size:.85rem">

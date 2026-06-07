@@ -1,5 +1,5 @@
 -- ============================================================
--- schema.sql — Base de datos Polla FIFA 2026
+-- schema.sql — Base de datos Juega FIFA 2026
 -- PostgreSQL
 -- ============================================================
 
