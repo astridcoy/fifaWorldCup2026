@@ -320,95 +320,111 @@ body {
 
 /* ── Match stadium photo ── */
 .match-stadium {
-  height: 130px;
+  height: 190px;
   position: relative;
   overflow: hidden;
-  margin: -1.25rem -1.25rem .85rem;
+  margin: -1.25rem -1.25rem 0;
   border-radius: 13px 13px 0 0;
   flex-shrink: 0;
 }
 .match-stadium img {
   width: 100%; height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center 30%;
   display: block;
-  transition: transform .4s ease;
+  transition: transform .5s ease;
 }
-.match-card:hover .match-stadium img { transform: scale(1.04); }
+.match-card:hover .match-stadium img { transform: scale(1.06); }
 .match-stadium-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(6,14,28,.92) 0%, rgba(6,14,28,.3) 55%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(6,14,28,1) 0%,
+    rgba(6,14,28,.82) 25%,
+    rgba(6,14,28,.25) 60%,
+    transparent 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: .6rem .85rem;
-  gap: .2rem;
+  padding: .7rem 1rem;
+  gap: .25rem;
+}
+.match-phase-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--gold);
+  opacity: .9;
+  margin-bottom: 0;
 }
 .match-stadium-name {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: .7rem;
+  font-size: .72rem;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.6);
+  color: rgba(255,255,255,.55);
 }
 
 /* ── Match grid ── */
 .matches-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 1.25rem;
+  gap: 1.35rem;
 }
 
 /* ── Match card ── */
 .match-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 1.25rem;
-  transition: transform .2s, box-shadow .2s;
+  transition: transform .22s, box-shadow .22s, border-color .22s;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-.match-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+.match-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  border-color: rgba(245,184,0,.28);
+}
 .match-card.finalizado { border-color: rgba(245,184,0,.45); }
+.match-card.apostado {
+  border-color: rgba(0,132,61,.35);
+}
 .match-card.apostado::after {
   content: "";
   position: absolute;
   top: 0; left: 0;
   width: 4px; height: 100%;
   background: var(--green);
-  border-radius: 14px 0 0 14px;
+  border-radius: 16px 0 0 16px;
 }
 
-.match-phase-badge {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: .72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-sub);
-  margin-bottom: .75rem;
-}
 .match-teams {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: .5rem;
-  margin-bottom: .75rem;
+  padding: .9rem 0 .65rem;
+  margin-bottom: 0;
 }
 .team-side { text-align: center; }
-.team-flag { font-size: 2rem; display: block; margin-bottom: .25rem; }
+.team-flag { font-size: 2.35rem; display: block; margin-bottom: .3rem; }
 .team-name {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
-  font-size: .95rem;
+  font-size: 1rem;
   color: #e2e8f0;
   text-transform: uppercase;
   letter-spacing: .5px;
+  line-height: 1.2;
 }
 .vs-center { text-align: center; }
 .vs-label {
@@ -630,7 +646,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--gold);
-  margin-bottom: .7rem;
+  margin-bottom: .2rem;
 }
 
 /* Match card status border accents */
@@ -1648,8 +1664,9 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   .matches-grid { grid-template-columns: 1fr; gap: .85rem; }
 
   /* Match card content */
-  .team-flag  { font-size: 1.6rem; }
-  .team-name  { font-size: .82rem; }
+  .match-stadium { height: 160px; }
+  .team-flag  { font-size: 1.8rem; }
+  .team-name  { font-size: .88rem; }
   .result-score { font-size: 1.6rem; }
   .match-date { font-size: .72rem; }
 

@@ -613,7 +613,7 @@ function tarjetaPartido(p) {
     <div class="${clases}" data-pid="${p.id}">
       ${puntosCorner}
       ${estadioHTML}
-      <div class="match-teams" style="${p.imagen_estadio ? 'margin-top:.5rem' : ''}">
+      <div class="match-teams">
         <div class="team-side"><span class="team-flag">${p.bandera_local}</span><span class="team-name">${escHtml(p.equipo_local)}</span></div>
         <div class="vs-center">${centroVS}</div>
         <div class="team-side"><span class="team-flag">${p.bandera_visita}</span><span class="team-name">${escHtml(p.equipo_visita)}</span></div>
