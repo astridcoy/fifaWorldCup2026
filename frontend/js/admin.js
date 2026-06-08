@@ -1,12 +1,5 @@
 if (ROL !== "admin") window.location.href = "login.html";
 
-function escHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
 function msgOk(id, msg)  { const el = document.getElementById(id); el.className = "msg-ok";  el.innerHTML = `<i class="bi bi-check-circle me-1"></i>${msg}`; }
 function msgErr(id, msg) { const el = document.getElementById(id); el.className = "msg-err"; el.innerHTML = `<i class="bi bi-x-circle me-1"></i>${msg}`;     }
 function msgClear(id)    { const el = document.getElementById(id); el.className = ""; el.textContent = ""; }

@@ -1135,6 +1135,114 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Page fade-in ── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-wrap { animation: pageFadeIn .45s ease both; }
+
+/* ── Card entrance stagger ── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.match-card.card-enter { animation: cardEnter .38s ease both; }
+
+/* ── Ranking row stagger ── */
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.ranking-table tbody tr.row-enter { animation: rowFadeIn .3s ease both; }
+
+/* ── Page header icon ── */
+.page-icon {
+  font-size: 1.55rem;
+  vertical-align: middle;
+  margin-right: .4rem;
+  color: var(--gold);
+  display: inline-block;
+}
+
+/* ── Focus states (accessibility) ── */
+.phase-tab:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.btn-fifa-green:focus-visible,
+.btn-fifa-gold:focus-visible,
+.btn-fifa-outline:focus-visible,
+.btn-danger-sm:focus-visible,
+.sidebar-logout-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.match-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(245,184,0,.12);
+}
+
+/* ── Apostado card glow ── */
+.match-card.apostado {
+  box-shadow: 0 0 0 1px rgba(0,132,61,.2), 0 4px 20px rgba(0,132,61,.1);
+}
+.match-card.apostado:hover {
+  box-shadow: 0 10px 36px rgba(0,132,61,.2), 0 0 0 1px rgba(0,132,61,.32);
+}
+
+/* ── Phase tab active glow ── */
+.phase-tab.active { box-shadow: 0 2px 14px rgba(245,184,0,.3); }
+
+/* ── Grupos accordion (centralized from inline styles) ── */
+.grupos-featured-label,
+.grupos-section-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--text-sub);
+  margin: 0 0 .75rem;
+  display: flex;
+  align-items: center;
+}
+.grupos-section-label { margin-top: 1.5rem; }
+.grupos-featured-grid,
+.grupos-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: 1.35rem;
+}
+#accordion-grupos .accordion-button::after { filter: invert(1) brightness(1.5); }
+#accordion-grupos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.06) !important; }
+#accordion-grupos .accordion-button:focus { box-shadow: none !important; }
+
+/* ── Ranking page — larger avatar override ── */
+.ranking-table .rank-avatar,
+.ranking-table .rank-avatar-default {
+  width: 44px; height: 44px;
+}
+.ranking-table .rank-nombre-wrap { display: flex; align-items: center; gap: .55rem; }
+
+/* ── Bet section separator ── */
+.bet-section {
+  border-top-color: rgba(255,255,255,.12);
+}
+
+/* ── Match date polished ── */
+.match-date {
+  font-size: .79rem;
+  letter-spacing: .2px;
+}
+
+/* ── Stats bar animated nums ── */
+.stats-bar-num { transition: color .3s; }
+
+@media (max-width: 575px) {
+  .grupos-featured-grid,
+  .grupos-mini-grid { grid-template-columns: 1fr; gap: .85rem; }
+}
+
 /* ── Navbar host-country flags ── */
 .navbar-hosts {
   display: flex;

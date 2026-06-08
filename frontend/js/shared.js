@@ -9,6 +9,25 @@ function headers() {
   return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
 }
 
+function escHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function animateCount(el, target, duration = 700) {
+  const start = 0;
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(start + (target - start) * ease);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function toast(msg, tipo = "success") {
   const t = document.createElement("div");
   t.className = `toast-wc toast-${tipo}`;

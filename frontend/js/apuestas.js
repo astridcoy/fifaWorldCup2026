@@ -32,13 +32,6 @@ EQUIPOS.forEach(eq => {
   selCampeon.appendChild(opt);
 });
 
-function escHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
 function formatFecha(fechaStr) {
   return new Date(fechaStr).toLocaleDateString("es-CL", {
     weekday: "short", day: "numeric", month: "short",
@@ -97,16 +90,22 @@ function updateStatsBar() {
   const pts         = finalizados.reduce((acc, p) => acc + calcularPuntosLocal(p), 0);
   const pct         = total > 0 ? Math.round(apostados / total * 100) : 0;
   const barColor    = pct === 100 ? "var(--green)" : pct >= 50 ? "var(--gold)" : "#fb923c";
-  document.getElementById("stats-bar").innerHTML = `
-    <div class="stats-bar-item"><span class="stats-bar-num">${apostados}</span><span class="stats-bar-label">apostados</span></div>
+  const bar = document.getElementById("stats-bar");
+  bar.innerHTML = `
+    <div class="stats-bar-item"><span class="stats-bar-num" data-target="${apostados}">0</span><span class="stats-bar-label">apostados</span></div>
     <div class="stats-bar-divider"></div>
-    <div class="stats-bar-item"><span class="stats-bar-num amber">${pendientes}</span><span class="stats-bar-label">pendientes</span></div>
+    <div class="stats-bar-item"><span class="stats-bar-num amber" data-target="${pendientes}">0</span><span class="stats-bar-label">pendientes</span></div>
     <div class="stats-bar-divider"></div>
-    <div class="stats-bar-item"><span class="stats-bar-num gold">${pts}</span><span class="stats-bar-label">pts ganados</span></div>
+    <div class="stats-bar-item"><span class="stats-bar-num gold" data-target="${pts}">0</span><span class="stats-bar-label">pts ganados</span></div>
     <div class="stats-bar-progress-wrap">
       <span class="stats-bar-progress-label">${apostados} / ${total} partidos · ${pct}%</span>
-      <div class="stats-progress"><div class="stats-progress-bar" style="width:${pct}%;background:${barColor}"></div></div>
+      <div class="stats-progress"><div class="stats-progress-bar" style="width:0%;background:${barColor};transition:width .8s ease"></div></div>
     </div>`;
+  bar.querySelectorAll(".stats-bar-num[data-target]").forEach(el => animateCount(el, parseInt(el.dataset.target)));
+  requestAnimationFrame(() => {
+    const pb = bar.querySelector(".stats-progress-bar");
+    if (pb) pb.style.width = `${pct}%`;
+  });
 }
 
 async function cargarPartidos() {
@@ -182,6 +181,7 @@ function renderPartidos() {
     const btn = document.getElementById(`btn-apostar-${p.id}`);
     if (btn) btn.addEventListener("click", () => registrarApuesta(p.id));
   });
+  _staggerCards(grid);
 }
 
 function renderGruposAccordion(grid, lista) {
@@ -236,6 +236,14 @@ function renderGruposAccordion(grid, lista) {
   lista.forEach(p => {
     const btn = document.getElementById(`btn-apostar-${p.id}`);
     if (btn) btn.addEventListener("click", () => registrarApuesta(p.id));
+  });
+  _staggerCards(grid);
+}
+
+function _staggerCards(container) {
+  container.querySelectorAll(".match-card").forEach((card, i) => {
+    card.style.animationDelay = `${i * 0.045}s`;
+    card.classList.add("card-enter");
   });
 }
 

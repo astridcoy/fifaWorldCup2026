@@ -29,10 +29,10 @@ function renderRanking(data) {
     const ringCls    = u.posicion === 1 ? "top-ring-1" : u.posicion === 2 ? "top-ring-2" : u.posicion === 3 ? "top-ring-3" : "";
     const esYo       = u.id === YO_ID;
     const avatarHtml = u.foto_perfil
-      ? `<img class="rank-avatar ${ringCls}" src="${u.foto_perfil}" alt="${u.nombre}" />`
+      ? `<img class="rank-avatar ${ringCls}" src="${u.foto_perfil}" alt="${escHtml(u.nombre)}" />`
       : `<span class="rank-avatar-default ${ringCls}"><i class="bi bi-person-fill"></i></span>`;
     const campeonCell = u.campeon_apostado
-      ? `<span style="font-size:.85rem;color:#e2e8f0">${u.campeon_apostado}</span>`
+      ? `<span style="font-size:.85rem;color:#e2e8f0">${escHtml(u.campeon_apostado)}</span>`
       : `<span style="color:var(--text-sub)">—</span>`;
     return `<tr class="${[esYo ? 'yo-row' : '', podiumCls].filter(Boolean).join(' ')}">
       <td><span class="pos-medal ${posClase}">${u.posicion}</span></td>
@@ -40,7 +40,7 @@ function renderRanking(data) {
         <span class="rank-nombre-wrap">
           ${avatarHtml}
           <span>
-            <span style="font-weight:600;display:block;line-height:1.2">${u.nombre}</span>
+            <span style="font-weight:600;display:block;line-height:1.2">${escHtml(u.nombre)}</span>
             ${esYo ? '<span class="yo-tag">TÚ</span>' : ""}
           </span>
         </span>
@@ -73,6 +73,10 @@ function renderRanking(data) {
         ⭐ Marcador exacto = 3 pts &nbsp;·&nbsp; ✓ Solo ganador = 1 pt &nbsp;·&nbsp; 🏆 Campeón = 5 pts
       </div>
     </div>`;
+  document.querySelectorAll(".ranking-table tbody tr").forEach((tr, i) => {
+    tr.style.animationDelay = `${i * 0.04}s`;
+    tr.classList.add("row-enter");
+  });
 }
 
 cargarRanking();
