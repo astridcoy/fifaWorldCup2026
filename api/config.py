@@ -3,8 +3,13 @@ from zoneinfo import ZoneInfo
 
 SANTIAGO = ZoneInfo("America/Santiago")
 
-SECRET_KEY   = os.environ.get("SECRET_KEY", "mundial2026_clave_secreta_cambiar_en_produccion")
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://usuario:contraseña@localhost:5432/polla_mundial")
+SECRET_KEY   = os.environ.get("SECRET_KEY")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY env var must be set — refusing to start without it")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL env var must be set — refusing to start without it")
 
 SMTP_HOST    = os.environ.get("SMTP_HOST", "")
 SMTP_PORT    = int(os.environ.get("SMTP_PORT", "587"))

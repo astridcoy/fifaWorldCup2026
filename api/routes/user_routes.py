@@ -23,7 +23,7 @@ def obtener_perfil():
             return jsonify({"error": "Usuario no encontrado"}), 404
         return jsonify(dict(usuario))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @user_bp.route("/perfil", methods=["PUT"])
@@ -60,7 +60,7 @@ def actualizar_perfil():
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": "El email ya está en uso por otro usuario"}), 409
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @user_bp.route("/mi-campeon", methods=["GET"])
@@ -74,4 +74,4 @@ def mi_campeon():
         cur.close(); conn.close()
         return jsonify({"campeon": fila["campeon"] if fila else ""})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500

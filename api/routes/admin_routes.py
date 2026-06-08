@@ -31,7 +31,7 @@ def crear_partido():
         cur.close(); conn.close()
         return jsonify({"mensaje": "Partido creado", "id": pid}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/partido/<int:partido_id>", methods=["PUT"])
@@ -83,7 +83,7 @@ def editar_partido(partido_id):
         cur.close(); conn.close()
         return jsonify({"mensaje": "Partido actualizado correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/partido/<int:partido_id>", methods=["DELETE"])
@@ -99,7 +99,7 @@ def eliminar_partido(partido_id):
         cur.close(); conn.close()
         return jsonify({"mensaje": "Partido eliminado correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/resultado/<int:partido_id>", methods=["PUT"])
@@ -129,7 +129,7 @@ def ingresar_resultado(partido_id):
         ).start()
         return jsonify({"mensaje": "Resultado ingresado y puntos calculados"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 def _notificar_resultado(partido_id):
@@ -156,7 +156,7 @@ def definir_campeon_real():
         cur.close(); conn.close()
         return jsonify({"mensaje": f"Campeón {campeon_real} registrado. Puntos asignados."})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/usuarios", methods=["GET"])
@@ -170,7 +170,7 @@ def listar_usuarios():
         cur.close(); conn.close()
         return jsonify([dict(u) for u in usuarios])
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/usuario", methods=["POST"])
@@ -200,7 +200,7 @@ def crear_usuario():
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": "El email ya está registrado"}), 409
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/usuario/<int:uid>", methods=["PUT"])
@@ -234,7 +234,7 @@ def editar_usuario(uid):
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": "El email ya está en uso por otro usuario"}), 409
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/usuario/<int:uid>", methods=["DELETE"])
@@ -258,7 +258,7 @@ def eliminar_usuario(uid):
         cur.close(); conn.close()
         return jsonify({"mensaje": "Usuario eliminado correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @admin_bp.route("/apuestas", methods=["GET"])
@@ -286,4 +286,4 @@ def ver_apuestas():
         cur.close(); conn.close()
         return jsonify([dict(r) for r in rows])
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500

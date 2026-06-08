@@ -32,6 +32,13 @@ EQUIPOS.forEach(eq => {
   selCampeon.appendChild(opt);
 });
 
+function escHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function formatFecha(fechaStr) {
   return new Date(fechaStr).toLocaleDateString("es-CL", {
     weekday: "short", day: "numeric", month: "short",
@@ -209,7 +216,7 @@ function renderGruposAccordion(grid, lista) {
               data-bs-toggle="collapse" data-bs-target="#${collapseId}"
               style="background:var(--card-bg);color:#e8eef7;box-shadow:none;padding:.85rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px">
               <i class="bi bi-grid-3x3-gap-fill" style="color:var(--gold);font-size:.9rem"></i>
-              ${grupo}
+              ${escHtml(grupo)}
               <span style="font-family:system-ui,sans-serif;font-size:.75rem;font-weight:400;color:var(--text-sub);margin-left:.2rem">${ps.length} partidos</span>
               ${pendientes > 0 ? `<span class="tab-badge">${pendientes}</span>` : ""}
             </button>
@@ -391,11 +398,11 @@ function getTeamInfo(name) {
 }
 
 function buildEquipoCardHTML(flag, name, info) {
-  if (!info) return `<div class="modal-equipo-card"><span class="modal-equipo-flag">${flag}</span><span class="modal-equipo-name">${name}</span><span class="modal-equipo-nickname" style="margin-top:.5rem">Datos no disponibles</span></div>`;
+  if (!info) return `<div class="modal-equipo-card"><span class="modal-equipo-flag">${flag}</span><span class="modal-equipo-name">${escHtml(name)}</span><span class="modal-equipo-nickname" style="margin-top:.5rem">Datos no disponibles</span></div>`;
   return `
     <div class="modal-equipo-card">
       <span class="modal-equipo-flag">${flag}</span>
-      <span class="modal-equipo-name">${name}</span>
+      <span class="modal-equipo-name">${escHtml(name)}</span>
       <span class="modal-conf-badge" style="background:${info.confColor}18;border-color:${info.confColor}44;color:${info.confColor}">${info.conf}</span>
       <span class="modal-equipo-nickname">"${info.nickname}"</span>
       <div class="modal-equipo-stats">
@@ -515,11 +522,11 @@ function showModalPartido(p) {
   const mapsUrl = st?.maps || `https://maps.google.com/?q=${encodeURIComponent(p.nombre_estadio || "FIFA 2026 Stadium")}`;
   document.getElementById("modal-estadio-content").innerHTML = `
     <div class="modal-estadio-stats">
-      <div class="modal-stat-tile"><i class="bi bi-building"></i><span class="modal-stat-label">Estadio</span><span class="modal-stat-value">${p.nombre_estadio || "—"}</span></div>
+      <div class="modal-stat-tile"><i class="bi bi-building"></i><span class="modal-stat-label">Estadio</span><span class="modal-stat-value">${escHtml(p.nombre_estadio) || "—"}</span></div>
       <div class="modal-stat-tile"><i class="bi bi-geo-alt-fill"></i><span class="modal-stat-label">Ciudad</span><span class="modal-stat-value">${st?.city || "—"}</span></div>
       <div class="modal-stat-tile"><i class="bi bi-flag-fill"></i><span class="modal-stat-label">País sede</span><span class="modal-stat-value">${st?.country || "—"}</span></div>
       <div class="modal-stat-tile"><i class="bi bi-people-fill"></i><span class="modal-stat-label">Capacidad</span><span class="modal-stat-value">${st?.capacity ? st.capacity + " espectadores" : "—"}</span></div>
-      <div class="modal-stat-tile"><i class="bi bi-soccer-ball"></i><span class="modal-stat-label">Fase</span><span class="modal-stat-value">${p.fase}${p.grupo ? " · Grupo " + p.grupo : ""}</span></div>
+      <div class="modal-stat-tile"><i class="bi bi-soccer-ball"></i><span class="modal-stat-label">Fase</span><span class="modal-stat-value">${escHtml(p.fase)}${p.grupo ? " · Grupo " + escHtml(p.grupo) : ""}</span></div>
       <div class="modal-stat-tile"><i class="bi bi-calendar3-event"></i><span class="modal-stat-label">Fecha</span><span class="modal-stat-value" style="font-size:.8rem">${formatFecha(p.fecha)}</span></div>
     </div>
     <a href="${mapsUrl}" target="_blank" rel="noopener" class="modal-maps-btn"><i class="bi bi-map-fill"></i>Abrir en Google Maps</a>`;
@@ -595,21 +602,21 @@ function tarjetaPartido(p) {
   }
   const estadioHTML = p.imagen_estadio ? `
     <div class="match-stadium">
-      <img src="${p.imagen_estadio}" alt="${p.nombre_estadio || 'Estadio'}" loading="lazy" />
+      <img src="${p.imagen_estadio}" alt="${escHtml(p.nombre_estadio || 'Estadio')}" loading="lazy" />
       <div class="match-stadium-overlay">
-        <span class="match-phase-badge" style="margin:0">${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</span>
-        ${p.nombre_estadio ? `<span class="match-stadium-name">${p.nombre_estadio}</span>` : ""}
+        <span class="match-phase-badge" style="margin:0">${escHtml(p.fase)}${p.grupo ? ` · ${escHtml(p.grupo)}` : ""}</span>
+        ${p.nombre_estadio ? `<span class="match-stadium-name">${escHtml(p.nombre_estadio)}</span>` : ""}
       </div>
     </div>` :
-    `<div class="match-group-chip"><i class="bi bi-grid-3x3-gap-fill" style="font-size:.65rem"></i> ${p.fase}${p.grupo ? ` · ${p.grupo}` : ""}</div>`;
+    `<div class="match-group-chip"><i class="bi bi-grid-3x3-gap-fill" style="font-size:.65rem"></i> ${escHtml(p.fase)}${p.grupo ? ` · ${escHtml(p.grupo)}` : ""}</div>`;
   return `
     <div class="${clases}" data-pid="${p.id}">
       ${puntosCorner}
       ${estadioHTML}
       <div class="match-teams" style="${p.imagen_estadio ? 'margin-top:.5rem' : ''}">
-        <div class="team-side"><span class="team-flag">${p.bandera_local}</span><span class="team-name">${p.equipo_local}</span></div>
+        <div class="team-side"><span class="team-flag">${p.bandera_local}</span><span class="team-name">${escHtml(p.equipo_local)}</span></div>
         <div class="vs-center">${centroVS}</div>
-        <div class="team-side"><span class="team-flag">${p.bandera_visita}</span><span class="team-name">${p.equipo_visita}</span></div>
+        <div class="team-side"><span class="team-flag">${p.bandera_visita}</span><span class="team-name">${escHtml(p.equipo_visita)}</span></div>
       </div>
       <div class="match-date"><i class="bi bi-calendar3 me-1"></i>${formatFecha(p.fecha)}</div>
       ${apuestaHTML}

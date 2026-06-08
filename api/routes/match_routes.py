@@ -27,7 +27,7 @@ def listar_partidos():
         cur.close(); conn.close()
         return jsonify([row_as_dict(p) for p in partidos])
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @match_bp.route("/apostar", methods=["POST"])
@@ -89,7 +89,7 @@ def apostar():
         cur.close(); conn.close()
         return jsonify({"mensaje": "Apuesta registrada correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @match_bp.route("/campeon", methods=["POST"])
@@ -117,7 +117,7 @@ def apostar_campeon():
         cur.close(); conn.close()
         return jsonify({"mensaje": "Campeón apostado correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @match_bp.route("/ranking", methods=["GET"])
@@ -142,4 +142,4 @@ def ranking():
         cur.close(); conn.close()
         return jsonify([{**dict(f), "posicion": i + 1} for i, f in enumerate(ranking_data)])
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500

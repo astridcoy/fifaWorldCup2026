@@ -1,5 +1,12 @@
 if (ROL !== "admin") window.location.href = "login.html";
 
+function escHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function msgOk(id, msg)  { const el = document.getElementById(id); el.className = "msg-ok";  el.innerHTML = `<i class="bi bi-check-circle me-1"></i>${msg}`; }
 function msgErr(id, msg) { const el = document.getElementById(id); el.className = "msg-err"; el.innerHTML = `<i class="bi bi-x-circle me-1"></i>${msg}`;     }
 function msgClear(id)    { const el = document.getElementById(id); el.className = ""; el.textContent = ""; }
@@ -35,10 +42,10 @@ function renderListaPartidos() {
   }
   const filas = partidos.map(p => `
     <tr>
-      <td>${p.bandera_local} ${p.equipo_local} <span style="color:var(--text-sub)">vs</span> ${p.bandera_visita} ${p.equipo_visita}</td>
+      <td>${p.bandera_local} ${escHtml(p.equipo_local)} <span style="color:var(--text-sub)">vs</span> ${p.bandera_visita} ${escHtml(p.equipo_visita)}</td>
       <td>
-        <span class="phase-tab active" style="pointer-events:none;padding:.2rem .7rem;font-size:.72rem">${p.fase}</span>
-        ${p.grupo ? `<span style="font-size:.72rem;color:var(--text-sub);margin-left:.3rem">${p.grupo}</span>` : ""}
+        <span class="phase-tab active" style="pointer-events:none;padding:.2rem .7rem;font-size:.72rem">${escHtml(p.fase)}</span>
+        ${p.grupo ? `<span style="font-size:.72rem;color:var(--text-sub);margin-left:.3rem">${escHtml(p.grupo)}</span>` : ""}
       </td>
       <td style="color:var(--text-sub);font-size:.85rem">${new Date(p.fecha).toLocaleString("es-CL", { timeZone: "America/Santiago" })}</td>
       <td>${p.finalizado
@@ -273,8 +280,8 @@ document.getElementById("btn-toggle-usuario-pw").addEventListener("click", () =>
 async function cargarUsuarios() {
   try {
     const res = await fetch(`${API}/admin/usuarios`, { headers: headers() });
-    const usuarios = await res.json();
-    renderTablaUsuarios(usuarios);
+    usuariosCache = await res.json();
+    renderTablaUsuarios(usuariosCache);
   } catch (_) {
     document.getElementById("lista-usuarios").innerHTML =
       '<div class="empty-state"><span class="empty-icon">⚠️</span><h3>Error al cargar usuarios</h3></div>';
@@ -298,12 +305,12 @@ function renderTablaUsuarios(usuarios) {
     const esSelf = u.id === ME ? `<span style="font-size:.7rem;color:var(--text-sub);margin-left:.4rem">(tú)</span>` : "";
     return `<tr>
       <td style="width:48px">${avatarHtml}</td>
-      <td>${u.nombre}${esSelf}</td>
-      <td style="color:var(--text-sub);font-size:.85rem">${u.email}</td>
+      <td>${escHtml(u.nombre)}${esSelf}</td>
+      <td style="color:var(--text-sub);font-size:.85rem">${escHtml(u.email)}</td>
       <td>${rolBadge}</td>
       <td>
         <button class="action-btn action-btn-edit me-1" onclick="abrirEditarUsuario(${u.id})" title="Editar usuario"><i class="bi bi-pencil-fill"></i></button>
-        <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g, "\\'")}')" title="Eliminar usuario"
+        <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id})" title="Eliminar usuario"
           ${u.id === ME ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}><i class="bi bi-trash-fill"></i></button>
       </td>
     </tr>`;
@@ -376,7 +383,9 @@ document.getElementById("btn-guardar-usuario").addEventListener("click", async (
   finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar'; }
 });
 
-async function eliminarUsuario(id, nombre) {
+async function eliminarUsuario(id) {
+  const u = usuariosCache.find(x => x.id === id);
+  const nombre = u ? u.nombre : `#${id}`;
   if (!confirm(`¿Eliminar al usuario "${nombre}"?\nSe eliminarán también todas sus apuestas. Esta acción no se puede deshacer.`)) return;
   try {
     const res  = await fetch(`${API}/admin/usuario/${id}`, { method: "DELETE", headers: headers() });
@@ -429,7 +438,7 @@ function renderVotos() {
         ? `<strong style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px">${v.resultado_local} – ${v.resultado_visita}</strong>`
         : '<span style="color:var(--text-sub);font-size:.8rem"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>';
       return `<tr>
-        <td style="color:#e8eef7">${v.bandera_local ?? ''} ${v.equipo_local} <span style="color:var(--text-sub)">vs</span> ${v.bandera_visita ?? ''} ${v.equipo_visita}</td>
+        <td style="color:#e8eef7">${v.bandera_local ?? ''} ${escHtml(v.equipo_local)} <span style="color:var(--text-sub)">vs</span> ${v.bandera_visita ?? ''} ${escHtml(v.equipo_visita)}</td>
         <td style="color:var(--text-sub);font-size:.8rem;white-space:nowrap">
           ${new Date(v.fecha).toLocaleString("es-CL",{timeZone:"America/Santiago",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}
         </td>
@@ -451,8 +460,8 @@ function renderVotos() {
               ? `<img src="${u.foto_perfil}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(245,184,0,.4);flex-shrink:0" />`
               : `<span style="width:34px;height:34px;border-radius:50%;background:rgba(245,184,0,.15);border:1px solid rgba(245,184,0,.3);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold)"><i class="bi bi-person-fill"></i></span>`}
             <span style="flex:1;min-width:0">
-              <strong style="font-size:.95rem">${u.nombre}</strong>
-              <span style="color:var(--text-sub);font-size:.8rem;margin-left:.5rem">${u.email}</span>
+              <strong style="font-size:.95rem">${escHtml(u.nombre)}</strong>
+              <span style="color:var(--text-sub);font-size:.8rem;margin-left:.5rem">${escHtml(u.email)}</span>
             </span>
             <span style="display:flex;gap:.4rem;align-items:center;flex-shrink:0">
               <span style="background:rgba(255,255,255,.07);border-radius:6px;padding:.2rem .55rem;font-size:.75rem;color:var(--text-sub)"><i class="bi bi-check2-square me-1"></i>${totalVotos} votos</span>

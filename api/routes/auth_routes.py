@@ -1,4 +1,7 @@
 import re
+import hmac
+import hashlib
+import logging
 import bcrypt
 import jwt
 import secrets
@@ -65,6 +68,17 @@ def _email_valido(email):
     return True, ""
 
 
+_PW_RE = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
+
+def _password_valido(pw):
+    return bool(_PW_RE.match(pw)) if pw else False
+
+def _hmac_token(token):
+    return hmac.new(SECRET_KEY.encode(), token.encode(), digestmod=hashlib.sha256).hexdigest()
+
+_DUMMY_HASH = bcrypt.hashpw(b"__timing_safe_dummy__", bcrypt.gensalt())
+
+
 @auth_bp.route("/registro", methods=["POST"])
 def registro():
     datos    = request.get_json()
@@ -78,6 +92,10 @@ def registro():
     ok, msg = _email_valido(email)
     if not ok:
         return jsonify({"error": msg}), 400
+    if len(nombre) < 2 or len(nombre) > 80:
+        return jsonify({"error": "El nombre debe tener entre 2 y 80 caracteres"}), 400
+    if not _password_valido(password):
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"}), 400
 
     hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     try:
@@ -95,7 +113,8 @@ def registro():
         import psycopg2
         if isinstance(e, psycopg2.errors.UniqueViolation):
             return jsonify({"error": "El email ya está registrado"}), 409
-        return jsonify({"error": str(e)}), 500
+        logging.exception("Error en /registro")
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -110,7 +129,8 @@ def login():
         usuario = cur.fetchone()
         cur.close(); conn.close()
 
-        if not usuario or not bcrypt.checkpw(password.encode(), usuario["password"].encode()):
+        stored = usuario["password"].encode() if usuario else _DUMMY_HASH
+        if not usuario or not bcrypt.checkpw(password.encode(), stored):
             return jsonify({"error": "Credenciales incorrectas"}), 401
 
         token = jwt.encode(
@@ -121,7 +141,8 @@ def login():
         return jsonify({"token": token, "nombre": usuario["nombre"],
                         "rol": usuario["rol"], "id": usuario["id"]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.exception("Error en /login")
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @auth_bp.route("/recuperar-password", methods=["POST"])
@@ -139,17 +160,19 @@ def recuperar_password():
         usuario = cur.fetchone()
         if usuario:
             token  = secrets.token_urlsafe(32)
+            stored = _hmac_token(token)
             expiry = datetime.utcnow() + timedelta(hours=1)
             cur.execute(
                 "UPDATE usuarios SET reset_token = %s, reset_token_expiry = %s WHERE id = %s",
-                (token, expiry, usuario["id"])
+                (stored, expiry, usuario["id"])
             )
             conn.commit()
             send_reset_email(email, token)
         cur.close(); conn.close()
         return jsonify({"mensaje": "Si el correo está registrado, recibirás un enlace en breve."}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.exception("Error en /recuperar-password")
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @auth_bp.route("/reset-password", methods=["POST"])
@@ -159,10 +182,12 @@ def reset_password():
     password = datos.get("password", "")
     if not token or not password:
         return jsonify({"error": "Token y contraseña son obligatorios"}), 400
+    if not _password_valido(password):
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"}), 400
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("SELECT id, reset_token_expiry FROM usuarios WHERE reset_token = %s", (token,))
+        cur.execute("SELECT id, reset_token_expiry FROM usuarios WHERE reset_token = %s", (_hmac_token(token),))
         usuario = cur.fetchone()
         if not usuario:
             cur.close(); conn.close()
@@ -179,4 +204,5 @@ def reset_password():
         cur.close(); conn.close()
         return jsonify({"mensaje": "Contraseña actualizada correctamente"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.exception("Error en /reset-password")
+        return jsonify({"error": "Error interno del servidor"}), 500
