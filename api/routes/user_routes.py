@@ -1,10 +1,21 @@
+import re
 import bcrypt
 import psycopg2
 from flask import Blueprint, request, jsonify
 from database import get_db
 from auth import token_requerido
+from routes.auth_routes import _password_valido, _email_valido
 
 user_bp = Blueprint("user", __name__)
+
+_MAX_FOTO_CHARS = 3_000_000  # ~2 MB original after base64 encoding
+
+_CANCION_RE = re.compile(
+    r'^https://(open\.spotify\.com/(track|playlist|album|artist)/|'
+    r'(www\.)?youtube\.com/watch(\?|/)|'
+    r'youtu\.be/|'
+    r'music\.youtube\.com/)'
+)
 
 _PERFIL_EXTRAS = {
     "estado":       150,
@@ -45,6 +56,18 @@ def actualizar_perfil():
 
     if not nombre or not email:
         return jsonify({"error": "Nombre y email son obligatorios"}), 400
+    if len(nombre) < 2 or len(nombre) > 80:
+        return jsonify({"error": "El nombre debe tener entre 2 y 80 caracteres"}), 400
+
+    ok, msg = _email_valido(email)
+    if not ok:
+        return jsonify({"error": msg}), 400
+
+    if password and not _password_valido(password):
+        return jsonify({"error": (
+            "La contraseña debe tener al menos 8 caracteres, "
+            "una mayúscula, una minúscula y un número"
+        )}), 400
 
     try:
         conn = get_db()
@@ -58,14 +81,21 @@ def actualizar_perfil():
             values.append(hash_pw)
 
         if "foto_perfil" in datos:
+            fp = datos["foto_perfil"]
+            if fp and len(fp) > _MAX_FOTO_CHARS:
+                cur.close()
+                conn.close()
+                return jsonify({"error": "La foto no puede superar los 2 MB"}), 400
             sets.append("foto_perfil = %s")
-            values.append(datos["foto_perfil"])
+            values.append(fp)
 
         for campo, max_len in _PERFIL_EXTRAS.items():
             if campo in datos:
                 val = (datos[campo] or "").strip()
                 if len(val) > max_len:
                     return jsonify({"error": f"El campo supera el límite de {max_len} caracteres"}), 400
+                if campo == "cancion_url" and val and not _CANCION_RE.match(val):
+                    return jsonify({"error": "Solo se aceptan URLs de Spotify o YouTube"}), 400
                 sets.append(f"{campo} = %s")
                 values.append(val or None)
 

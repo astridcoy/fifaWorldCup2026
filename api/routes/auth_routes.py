@@ -3,6 +3,8 @@ import re
 import hmac
 import hashlib
 import logging
+import time
+import threading
 import bcrypt
 import jwt
 import psycopg2
@@ -22,6 +24,34 @@ except ImportError:
 
 
 auth_bp = Blueprint("auth", __name__)
+
+
+# ── Rate limiting por IP ─────────────────────────────────────────
+
+_RL_LOCK  = threading.Lock()
+_RL_STORE = {}  # key -> list[timestamp]
+
+
+def _client_ip():
+    xff = request.headers.get("X-Forwarded-For", "")
+    return (xff.split(",")[0].strip() or request.remote_addr or "unknown").lower()
+
+
+def _is_rate_limited(key, max_hits, window):
+    now    = time.time()
+    cutoff = now - window
+    with _RL_LOCK:
+        hits = [t for t in _RL_STORE.get(key, []) if t > cutoff]
+        if len(hits) >= max_hits:
+            _RL_STORE[key] = hits
+            return True
+        hits.append(now)
+        _RL_STORE[key] = hits
+        if len(_RL_STORE) > 10_000:
+            dead = [k for k, v in _RL_STORE.items() if not any(t > cutoff for t in v)]
+            for k in dead:
+                del _RL_STORE[k]
+    return False
 
 
 # ── Validadores ──────────────────────────────────────────────────
@@ -169,6 +199,8 @@ def google_login():
 
 @auth_bp.route("/registro", methods=["POST"])
 def registro():
+    if _is_rate_limited(f"reg:{_client_ip()}", 5, 3600):
+        return jsonify({"error": "Demasiados intentos. Espera antes de crear otra cuenta."}), 429
     datos    = request.get_json()
     nombre   = datos.get("nombre", "").strip()
     email    = datos.get("email",  "").strip().lower()
@@ -210,6 +242,8 @@ def registro():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    if _is_rate_limited(f"login:{_client_ip()}", 5, 300):
+        return jsonify({"error": "Demasiados intentos. Espera 5 minutos."}), 429
     datos    = request.get_json()
     email    = datos.get("email", "").strip().lower()
     password = datos.get("password", "")
@@ -244,6 +278,8 @@ def login():
 
 @auth_bp.route("/recuperar-password", methods=["POST"])
 def recuperar_password():
+    if _is_rate_limited(f"recover:{_client_ip()}", 3, 600):
+        return jsonify({"error": "Demasiados intentos. Espera 10 minutos."}), 429
     datos = request.get_json()
     email = datos.get("email", "").strip().lower()
     if not email:

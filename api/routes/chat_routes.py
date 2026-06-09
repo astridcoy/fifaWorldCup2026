@@ -5,13 +5,21 @@ from auth import token_requerido
 
 chat_bp = Blueprint("chat", __name__)
 
-_RATE_LIMIT = {}
-_RATE_SECONDS = 3
-_MAX_MESSAGES = 200
+_RATE_LIMIT        = {}
+_RATE_SECONDS      = 3
+_MAX_MESSAGES      = 200
+_RL_NEXT_CLEANUP   = 0
+_RL_CLEANUP_EVERY  = 300  # seconds
 
 
 def _check_rate(user_id):
+    global _RL_NEXT_CLEANUP
     now = time.time()
+    if now > _RL_NEXT_CLEANUP:
+        cutoff = now - _RATE_SECONDS * 2
+        for uid in [k for k, ts in _RATE_LIMIT.items() if ts < cutoff]:
+            del _RATE_LIMIT[uid]
+        _RL_NEXT_CLEANUP = now + _RL_CLEANUP_EVERY
     last = _RATE_LIMIT.get(user_id, 0)
     if now - last < _RATE_SECONDS:
         return False
@@ -84,16 +92,11 @@ def send_message():
 @chat_bp.route("/chat/messages", methods=["DELETE"])
 @token_requerido
 def clear_all_messages():
+    if request.usuario_rol != "admin":
+        return jsonify({"error": "Sin permiso"}), 403
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("SELECT rol FROM usuarios WHERE id = %s", (request.usuario_id,))
-        user = cur.fetchone()
-        if not user or user["rol"] != "admin":
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Sin permiso"}), 403
-
         cur.execute("DELETE FROM chat_messages")
         conn.commit()
         cur.close()
@@ -116,9 +119,7 @@ def delete_message(msg_id):
             conn.close()
             return jsonify({"error": "Mensaje no encontrado"}), 404
 
-        cur.execute("SELECT rol FROM usuarios WHERE id = %s", (request.usuario_id,))
-        user = cur.fetchone()
-        is_admin = user and user["rol"] == "admin"
+        is_admin = request.usuario_rol == "admin"
         is_owner = row["id_usuario"] == request.usuario_id
 
         if not is_admin and not is_owner:
