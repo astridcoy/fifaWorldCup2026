@@ -57,6 +57,15 @@ const _imgObserver = new IntersectionObserver((entries) => {
 
 async function _loadStadiumImg(pid, imgEl) {
   if (!imgEl) return;
+  // Use static CDN image if available for this stadium
+  const partido = partidos.find(p => p.id === parseInt(pid));
+  const stInfo  = partido ? getStadiumInfo(partido.nombre_estadio) : null;
+  if (stInfo?.img) {
+    imgEl.src = stInfo.img;
+    imgEl.style.opacity = "1";
+    return;
+  }
+  // Fall back to API-stored image
   if (_imgCache.has(pid)) {
     imgEl.src = _imgCache.get(pid);
     imgEl.style.opacity = "1";
@@ -410,7 +419,10 @@ function showModalPartido(p) {
   bootstrap.Tab.getOrCreateInstance(document.querySelector("#modalTabs .nav-link")).show();
   const _heroEl = document.getElementById("modal-hero");
   _heroEl.style.backgroundImage = "";
-  if (p.tiene_imagen) {
+  const _stInfo = getStadiumInfo(p.nombre_estadio);
+  if (_stInfo?.img) {
+    _heroEl.style.backgroundImage = `url(${_stInfo.img})`;
+  } else if (p.tiene_imagen) {
     const _pid = String(p.id);
     if (_imgCache.has(_pid)) {
       _heroEl.style.backgroundImage = `url(${_imgCache.get(_pid)})`;
