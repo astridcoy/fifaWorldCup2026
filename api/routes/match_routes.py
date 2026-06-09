@@ -15,40 +15,52 @@ def listar_partidos():
         conn = get_db()
         cur  = conn.cursor()
         cur.execute("""
-            SELECT p.*,
-                   a.goles_local_apostado,
-                   a.goles_visita_apostado,
+            SELECT p.id, p.equipo_local, p.equipo_visita, p.bandera_local, p.bandera_visita,
+                   p.fecha, p.goles_local, p.goles_visita, p.finalizado,
+                   p.fase, p.grupo, p.nombre_estadio,
+                   (p.imagen_estadio IS NOT NULL) AS tiene_imagen,
+                   a.prediccion,
                    COALESCE(a.intentos, 0) AS intentos
             FROM partidos p
             LEFT JOIN apuestas a ON a.id_partido = p.id AND a.id_usuario = %s
             ORDER BY NULLIF(p.grupo, '') ASC NULLS LAST, p.fecha ASC
         """, (request.usuario_id,))
         partidos = cur.fetchall()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify([row_as_dict(p) for p in partidos])
-    except Exception as e:
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@match_bp.route("/partidos/<int:pid>/imagen", methods=["GET"])
+@token_requerido
+def get_partido_imagen(pid):
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("SELECT imagen_estadio FROM partidos WHERE id = %s", (pid,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row or not row["imagen_estadio"]:
+            return jsonify({"error": "Sin imagen"}), 404
+        resp = jsonify({"imagen_estadio": row["imagen_estadio"]})
+        resp.headers["Cache-Control"] = "private, max-age=86400"
+        return resp
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @match_bp.route("/apostar", methods=["POST"])
 @token_requerido
 def apostar():
-    datos        = request.get_json()
-    id_partido   = datos.get("id_partido")
-    goles_local  = datos.get("goles_local_apostado")
-    goles_visita = datos.get("goles_visita_apostado")
+    datos      = request.get_json()
+    id_partido = datos.get("id_partido")
+    prediccion = datos.get("prediccion")
 
-    if goles_local is None or goles_visita is None:
-        return jsonify({"error": "Debes ingresar ambos marcadores"}), 400
-    try:
-        goles_local  = int(goles_local)
-        goles_visita = int(goles_visita)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Los goles deben ser números enteros"}), 400
-    if goles_local < 0 or goles_visita < 0:
-        return jsonify({"error": "Los goles no pueden ser negativos"}), 400
-    if goles_local > _MAX_GOLES or goles_visita > _MAX_GOLES:
-        return jsonify({"error": f"El máximo permitido es {_MAX_GOLES} goles por equipo"}), 400
+    if prediccion not in ("L", "E", "V"):
+        return jsonify({"error": "Predicción inválida. Usa L (local gana), E (empate) o V (visita gana)"}), 400
 
     try:
         conn = get_db()
@@ -60,9 +72,9 @@ def apostar():
             return jsonify({"error": "Partido no encontrado"}), 404
         if partido["finalizado"]:
             return jsonify({"error": "El partido ya finalizó, no puedes apostar"}), 400
-        deadline = partido["fecha"] - timedelta(hours=24)
+        deadline = partido["fecha"] - timedelta(hours=1)
         if chile_now() >= deadline:
-            return jsonify({"error": "Las apuestas cerraron 24 horas antes del partido"}), 400
+            return jsonify({"error": "Las apuestas cerraron 1 hora antes del partido"}), 400
 
         cur.execute(
             "SELECT intentos FROM apuestas WHERE id_usuario = %s AND id_partido = %s",
@@ -72,23 +84,25 @@ def apostar():
 
         if existente:
             if existente["intentos"] >= 2:
-                cur.close(); conn.close()
+                cur.close()
+                conn.close()
                 return jsonify({"error": "Ya usaste los 2 intentos permitidos para este partido"}), 400
             cur.execute("""
-                UPDATE apuestas
-                SET goles_local_apostado = %s, goles_visita_apostado = %s, intentos = intentos + 1
+                UPDATE apuestas SET prediccion = %s, intentos = intentos + 1
                 WHERE id_usuario = %s AND id_partido = %s
-            """, (goles_local, goles_visita, request.usuario_id, id_partido))
+            """, (prediccion, request.usuario_id, id_partido))
         else:
             cur.execute("""
-                INSERT INTO apuestas (id_usuario, id_partido, goles_local_apostado, goles_visita_apostado, intentos)
-                VALUES (%s, %s, %s, %s, 1)
-            """, (request.usuario_id, id_partido, goles_local, goles_visita))
+                INSERT INTO apuestas (id_usuario, id_partido, prediccion, intentos)
+                VALUES (%s, %s, %s, 1)
+            """, (request.usuario_id, id_partido, prediccion))
 
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Apuesta registrada correctamente"})
-    except Exception as e:
+    except Exception:
+        import traceback; print("[apostar]", traceback.format_exc())
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -107,16 +121,18 @@ def apostar_campeon():
             WHERE fase = 'Final' AND fecha <= NOW() AT TIME ZONE 'America/Santiago'
         """)
         if cur.fetchone()["cnt"] > 0:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return jsonify({"error": "La Final ya comenzó, no puedes cambiar tu apuesta al campeón"}), 400
         cur.execute("""
             INSERT INTO apuesta_campeon (id_usuario, campeon) VALUES (%s, %s)
             ON CONFLICT (id_usuario) DO UPDATE SET campeon = EXCLUDED.campeon
         """, (request.usuario_id, campeon))
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Campeón apostado correctamente"})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -129,8 +145,7 @@ def ranking():
         cur.execute("""
             SELECT u.id, u.nombre, u.foto_perfil,
                    COALESCE(SUM(a.puntos), 0) + COALESCE(ac.puntos_campeon, 0) AS total_puntos,
-                   COUNT(CASE WHEN a.puntos = 3 THEN 1 END) AS marcadores_exactos,
-                   COUNT(CASE WHEN a.puntos = 1 THEN 1 END) AS ganadores_acertados,
+                   COUNT(CASE WHEN a.puntos > 0 THEN 1 END) AS aciertos,
                    COALESCE(ac.campeon, '') AS campeon_apostado
             FROM usuarios u
             LEFT JOIN apuestas a ON a.id_usuario = u.id
@@ -139,7 +154,10 @@ def ranking():
             ORDER BY total_puntos DESC
         """)
         ranking_data = cur.fetchall()
-        cur.close(); conn.close()
-        return jsonify([{**dict(f), "posicion": i + 1} for i, f in enumerate(ranking_data)])
-    except Exception as e:
+        cur.close()
+        conn.close()
+        resp = jsonify([{**dict(f), "posicion": i + 1} for i, f in enumerate(ranking_data)])
+        resp.headers["Cache-Control"] = "public, max-age=15"
+        return resp
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500

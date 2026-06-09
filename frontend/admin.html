@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <script>if(!localStorage.getItem("token")||localStorage.getItem("rol")!=="admin"){document.documentElement.style.display="none";location.replace("login.html");}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juega FIFA World Cup 2026 — Panel Admin</title>
+  <title>Pollatouch Mundial 2026 — Panel Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -18,6 +19,13 @@
     }
     #accordion-votos .accordion-button::after { filter: invert(1) brightness(1.5); }
     #accordion-votos .accordion-item { border: 1px solid rgba(255,255,255,.1) !important; }
+    #accordion-admin-partidos .accordion-button::after { filter: invert(1) brightness(1.5); }
+    #accordion-admin-partidos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.04) !important; }
+    #accordion-admin-partidos .accordion-button:focus { box-shadow: none !important; }
+    .admin-filter-bar { display:flex; gap:.55rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+    .admin-filter-bar .input-group-text { background:var(--input-bg); border-color:rgba(255,255,255,.1); color:var(--text-sub); }
+    .admin-filter-bar .form-control,
+    .admin-filter-bar .form-select { max-width:100%; }
 
     .action-btn {
       display: inline-flex;
@@ -52,12 +60,13 @@
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="sidebar-drawer" id="sidebar-drawer">
   <div class="sidebar-header">
-    <div class="sidebar-brand">JUEGA <span>FIFA</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
+    <div class="sidebar-brand">POLLATOUCH <span>MUNDIAL</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
     <button class="sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
   </div>
   <nav class="sidebar-nav">
     <a href="index.html" class="sidebar-link"><i class="bi bi-controller"></i> Mis Apuestas</a>
     <a href="ranking.html" class="sidebar-link"><i class="bi bi-trophy"></i> Ranking</a>
+    <a href="#" class="sidebar-link" onclick="event.preventDefault(); openChatWidget()"><i class="bi bi-chat-dots"></i> Chat</a>
     <a href="perfil.html" class="sidebar-link"><i class="bi bi-person-circle"></i> Perfil</a>
     <div class="sidebar-divider"></div>
     <a href="admin.html" class="sidebar-link active"><i class="bi bi-gear"></i> Panel Admin</a>
@@ -72,7 +81,7 @@
     <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
     <a class="navbar-brand-wc" href="admin.html">
       <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
-      JUEGA <span>FIFA WORLD CUP</span> 2026
+      POLLATOUCH <span>MUNDIAL</span> 2026
       <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
       <span class="badge-admin ms-2">ADMIN</span>
     </a>
@@ -81,6 +90,8 @@
     <a href="ranking.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-trophy me-1"></i> Ranking
     </a>
+
+    
     <a href="admin.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-gear me-1"></i> Panel Control
     </a>
@@ -191,7 +202,7 @@
           </div>
         </div>
 
-        <button class="btn-fifa-green w-100 py-2" id="btn-crear">
+        <button class="btn-fifa-gold w-100 py-2" id="btn-crear">
           <i class="bi bi-plus-lg me-1"></i> Crear partido
         </button>
         <div id="msg-crear" class="mt-2"></div>
@@ -261,8 +272,48 @@
 
   <!-- Lista de partidos -->
   <div class="mt-4">
-    <div class="admin-card-title mb-3">
-      <i class="bi bi-list-ul" style="color:var(--gold)"></i> Partidos registrados
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <div class="admin-card-title mb-0">
+        <i class="bi bi-list-ul" style="color:var(--gold)"></i> Partidos registrados
+      </div>
+      <span id="partidos-count" style="font-size:.78rem;color:var(--text-sub)"></span>
+    </div>
+    <div class="admin-filter-bar">
+      <div class="input-group" style="max-width:250px;flex:1;min-width:150px">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="filtro-pais" class="form-control" placeholder="Buscar país o estadio…" autocomplete="off" />
+      </div>
+      <select id="filtro-grupo" class="form-select" style="max-width:170px;flex-shrink:0">
+        <option value="">— Todos —</option>
+        <option>Grupo A</option>
+        <option>Grupo B</option>
+        <option>Grupo C</option>
+        <option>Grupo D</option>
+        <option>Grupo E</option>
+        <option>Grupo F</option>
+        <option>Grupo G</option>
+        <option>Grupo H</option>
+        <option>Grupo I</option>
+        <option>Grupo J</option>
+        <option>Grupo K</option>
+        <option>Grupo L</option>
+        <option>Octavos</option>
+        <option>Cuartos</option>
+        <option>Semifinal</option>
+        <option>Tercer puesto</option>
+        <option>Final</option>
+      </select>
+      <select id="filtro-foto" class="form-select" style="max-width:160px;flex-shrink:0">
+        <option value="">📸 Todas</option>
+        <option value="con">✅ Con foto</option>
+        <option value="sin">❌ Sin foto</option>
+      </select>
+      <button class="btn-fifa-outline" id="btn-expand-all" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-expand me-1"></i>Expandir
+      </button>
+      <button class="btn-fifa-outline" id="btn-collapse-all" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-collapse me-1"></i>Colapsar
+      </button>
     </div>
     <div id="lista-partidos">
       <div class="empty-state">
@@ -278,7 +329,7 @@
       <div class="admin-card-title mb-0">
         <i class="bi bi-people-fill" style="color:var(--gold)"></i> Usuarios registrados
       </div>
-      <button class="btn-fifa-green" id="btn-nuevo-usuario" style="padding:.45rem 1.1rem;font-size:.85rem">
+      <button class="btn-fifa-gold" id="btn-nuevo-usuario" style="padding:.45rem 1.1rem;font-size:.85rem">
         <i class="bi bi-person-plus-fill me-1"></i> Nuevo usuario
       </button>
     </div>
@@ -292,14 +343,32 @@
 
   <!-- Votos registrados -->
   <div class="mt-5">
-    <div class="admin-card-title mb-3">
-      <i class="bi bi-check2-circle" style="color:var(--gold)"></i> Votos registrados
+    <div class="admin-card-title mb-3" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <span><i class="bi bi-check2-circle" style="color:var(--gold)"></i> Votos registrados</span>
+      <button class="btn-danger-sm" id="btn-reset-apuestas" style="padding:.45rem 1rem;font-size:.83rem">
+        <i class="bi bi-trash me-1"></i> Borrar historial de votos
+      </button>
     </div>
     <div id="lista-votos">
       <div class="empty-state">
         <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
         <h3 style="margin-top:1rem">Cargando...</h3>
       </div>
+    </div>
+  </div>
+
+  <!-- Gestión del chat -->
+  <div class="mt-5">
+    <div class="admin-card-title mb-3">
+      <i class="bi bi-chat-dots-fill" style="color:var(--gold)"></i> Gestión del chat
+    </div>
+    <div class="admin-card" style="max-width:480px">
+      <p style="color:var(--text-sub);font-size:.88rem;margin-bottom:1.25rem">
+        Elimina todos los mensajes del chat de forma permanente. Esta acción no se puede deshacer.
+      </p>
+      <button class="btn-danger-sm" id="btn-borrar-chat" style="padding:.5rem 1.1rem;font-size:.88rem">
+        <i class="bi bi-trash me-1"></i> Borrar historial del chat
+      </button>
     </div>
   </div>
 
@@ -500,6 +569,7 @@
 <script src="security.js"></script>
 <script src="js/config.js"></script>
 <script src="js/shared.js"></script>
+<script src="js/chat-widget.js"></script>
 <script src="js/admin.js"></script>
 
 <footer class="site-footer">
@@ -508,7 +578,7 @@
     <div class="footer-brand-col">
       <div class="d-flex align-items-center gap-2 mb-2">
         <img src="img/fifa2026-logo.png" class="footer-logo" alt="FIFA 2026" />
-        <div class="footer-brand-name">JUEGA <span>FIFA WORLD CUP</span> 2026</div>
+        <div class="footer-brand-name">POLLATOUCH <span>MUNDIAL</span> 2026</div>
       </div>
       <p class="footer-tagline">Predice los marcadores de cada partido, apuesta al campeón y demuestra que eres el mayor experto futbolero de tu grupo.</p>
       <div class="footer-host-row">
@@ -532,7 +602,7 @@
     </div>
 
     <div>
-      <h4 class="footer-heading">Juega FIFA 2026</h4>
+      <h4 class="footer-heading">Pollatouch Mundial 2026</h4>
       <ul class="footer-links-list">
         <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
         <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
@@ -561,7 +631,7 @@
   </div>
   <div class="footer-bottom">
     <div class="footer-bottom-inner">
-      <span class="footer-copy">© 2026 Juega FIFA World Cup 2026 — Proyecto independiente no afiliado a FIFA.</span>
+      <span class="footer-copy">© 2026 Pollatouch Mundial 2026 — Proyecto independiente no afiliado a FIFA.</span>
       <span class="footer-disclaimer">FIFA™, FIFA World Cup™ y el trofeo de la Copa Mundial son marcas registradas de la Fédération Internationale de Football Association.</span>
     </div>
   </div>

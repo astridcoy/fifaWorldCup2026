@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <script>if(!localStorage.getItem("token")){document.documentElement.style.display="none";location.replace("login.html");}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollatouch Mundial 2026 — Chat</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://polla-api-production.up.railway.app;">
+  <style>
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100dvh - 64px);
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1rem 1rem;
+    }
+    @supports not (height: 100dvh) {
+      .chat-wrap { height: calc(100vh - 64px); }
+    }
+    .chat-header {
+      padding: .85rem 0 .6rem;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      margin-bottom: .75rem;
+      flex-shrink: 0;
+    }
+    .chat-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      color: #e8eef7;
+      margin: 0;
+    }
+    .chat-header p {
+      font-size: .78rem;
+      color: var(--text-sub);
+      margin: .15rem 0 0;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      padding: .25rem 0 .5rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.1) transparent;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+
+    .chat-msg {
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+      max-width: 82%;
+    }
+    .chat-msg.own {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .chat-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .chat-avatar-initials {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(245,184,0,.15);
+      border: 1px solid rgba(245,184,0,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .chat-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+      min-width: 0;
+    }
+    .chat-meta {
+      font-size: .7rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .chat-msg.own .chat-meta { justify-content: flex-end; }
+    .chat-meta .name { font-weight: 600; color: var(--gold); }
+    .chat-bubble {
+      background: var(--card-bg);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 0 12px 12px 12px;
+      padding: .5rem .75rem;
+      font-size: .88rem;
+      color: #e8eef7;
+      line-height: 1.4;
+      word-break: break-word;
+      position: relative;
+    }
+    .chat-msg.own .chat-bubble {
+      background: rgba(245,184,0,.1);
+      border-color: rgba(245,184,0,.2);
+      border-radius: 12px 0 12px 12px;
+    }
+    .chat-bubble .btn-del {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.25);
+      font-size: .7rem;
+      padding: 0;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .chat-bubble:hover .btn-del { opacity: 1; }
+    .chat-bubble .btn-del:hover { color: #e74c3c; }
+
+    .chat-input-wrap {
+      flex-shrink: 0;
+      display: flex;
+      gap: .5rem;
+      padding-top: .75rem;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 22px;
+      color: #e8eef7;
+      font-size: .9rem;
+      padding: .55rem 1rem;
+      outline: none;
+      transition: border-color .2s;
+      resize: none;
+      max-height: 80px;
+    }
+    .chat-input:focus { border-color: rgba(245,184,0,.5); }
+    .chat-input::placeholder { color: var(--text-sub); }
+    .chat-send-btn {
+      background: var(--gold);
+      border: none;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      color: #111;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity .15s, transform .1s;
+      align-self: flex-end;
+    }
+    .chat-send-btn:hover { opacity: .85; }
+    .chat-send-btn:active { transform: scale(.93); }
+    .chat-send-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .chat-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-sub);
+      gap: .5rem;
+      font-size: .9rem;
+    }
+    .chat-empty i { font-size: 2.5rem; opacity: .35; }
+    .chat-counter {
+      font-size: .7rem;
+      color: var(--text-sub);
+      text-align: right;
+      margin-top: .2rem;
+    }
+    .chat-counter.warn { color: #e67e22; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="sidebar-drawer" id="sidebar-drawer">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">POLLATOUCH <span>MUNDIAL</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
+    <button class="sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link"><i class="bi bi-controller"></i> Mis Apuestas</a>
+    <a href="ranking.html" class="sidebar-link"><i class="bi bi-trophy"></i> Ranking</a>
+    <a href="chat.html" class="sidebar-link active"><i class="bi bi-chat-dots"></i> Chat</a>
+    <a href="perfil.html" class="sidebar-link"><i class="bi bi-person-circle"></i> Perfil</a>
+    <div class="sidebar-divider"></div>
+    <a href="admin.html" class="sidebar-link sidebar-link-admin" id="sidebar-admin-link"><i class="bi bi-gear"></i> Panel Admin</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout-btn" id="sidebar-logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar-wc d-flex align-items-center justify-content-between">
+  <div class="d-flex align-items-center gap-2">
+    <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
+    <a class="navbar-brand-wc" href="index.html">
+      <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
+      POLLATOUCH <span>MUNDIAL</span> 2026
+      <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span>
+    </a>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="ranking.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-trophy me-1"></i> Ranking
+    </a>
+    <a href="index.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-controller me-1"></i> Apuestas
+    </a>
+    <a href="perfil.html" class="btn-fifa-outline d-none d-sm-inline-block">
+      <i class="bi bi-person-circle me-1"></i> Perfil
+    </a>
+    <button class="btn-danger-sm nav-logout-desktop" id="btn-logout">
+      <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Chat -->
+<div class="chat-wrap">
+  <div class="chat-header">
+    <h2><i class="bi bi-chat-dots-fill me-2" style="color:var(--gold)"></i>Chat del Mundial</h2>
+    <p>Habla con los demás participantes · máx. 300 caracteres · respeta a todos</p>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-empty" id="chat-empty">
+      <i class="bi bi-chat-square-dots"></i>
+      <span>Cargando mensajes...</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chat-input" placeholder="Escribe un mensaje..." rows="1" maxlength="300"></textarea>
+      <button class="chat-send-btn" id="chat-send" title="Enviar"><i class="bi bi-send-fill"></i></button>
+    </div>
+    <div class="chat-counter" id="chat-counter">0 / 300</div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/shared.js"></script>
+<script>
+  const API      = "https://polla-api-production.up.railway.app";
+  const ME_ID    = parseInt(localStorage.getItem("id")    || "0");
+  const ME_ROL   = localStorage.getItem("rol")   || "";
+  const ME_NOMBRE= localStorage.getItem("nombre")|| "";
+
+  let lastId        = 0;
+  let pollTimer     = null;
+  let isAtBottom    = true;
+  let allMessages   = [];
+
+  // ── Avatar helpers ──────────────────────────────────────────
+  function avatarHtml(nombre, foto, size = 34) {
+    if (foto) {
+      return `<img class="chat-avatar" src="${foto}" alt="${escHtml(nombre)}" style="width:${size}px;height:${size}px" />`;
+    }
+    const initials = nombre.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+    return `<div class="chat-avatar-initials" style="width:${size}px;height:${size}px">${initials}</div>`;
+  }
+
+  function fmtTime(iso) {
+    const tz   = "America/Santiago";
+    const d    = new Date(iso);
+    const now  = new Date();
+    const dDay   = d.toLocaleDateString("es-CL",   { timeZone: tz });
+    const nowDay = now.toLocaleDateString("es-CL",  { timeZone: tz });
+    if (dDay === nowDay) {
+      return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+    }
+    return d.toLocaleString("es-CL", {
+      timeZone: tz, day: "2-digit", month: "short",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  // ── Render ──────────────────────────────────────────────────
+  function buildMsgEl(msg) {
+    const isOwn  = msg.id_usuario === ME_ID;
+    const canDel = isOwn || ME_ROL === "admin";
+    const div    = document.createElement("div");
+    div.className = `chat-msg${isOwn ? " own" : ""}`;
+    div.dataset.id = msg.id;
+
+    const delBtn = canDel
+      ? `<button class="btn-del" onclick="deleteMsg(${msg.id})" title="Eliminar"><i class="bi bi-x-lg"></i></button>`
+      : "";
+
+    div.innerHTML = `
+      ${avatarHtml(msg.nombre, msg.foto_perfil)}
+      <div class="chat-bubble-wrap">
+        <div class="chat-meta">
+          ${isOwn ? "" : `<span class="name">${escHtml(msg.nombre)}</span>`}
+          <span>${fmtTime(msg.created_at)}</span>
+        </div>
+        <div class="chat-bubble">
+          ${escHtml(msg.mensaje)}
+          ${delBtn}
+        </div>
+      </div>`;
+    return div;
+  }
+
+  function appendMessages(msgs) {
+    const container = document.getElementById("chat-messages");
+    const empty     = document.getElementById("chat-empty");
+    if (empty) empty.remove();
+
+    msgs.forEach(msg => {
+      allMessages.push(msg);
+      container.appendChild(buildMsgEl(msg));
+      lastId = Math.max(lastId, msg.id);
+    });
+
+    if (isAtBottom) scrollBottom();
+  }
+
+  function scrollBottom() {
+    const c = document.getElementById("chat-messages");
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // ── Polling ─────────────────────────────────────────────────
+  async function poll() {
+    try {
+      const res  = await fetch(`${API}/chat/messages?since=${lastId}`, { headers: headers() });
+      if (!res.ok) return;
+      const msgs = await res.json();
+      if (msgs.length) appendMessages(msgs);
+    } catch (_) {}
+    finally {
+      pollTimer = setTimeout(poll, 4000);
+    }
+  }
+
+  // ── Send ────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const btn   = document.getElementById("chat-send");
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/chat/messages`, {
+        method:  "POST",
+        headers: headers(),
+        body:    JSON.stringify({ mensaje: texto }),
+      });
+      if (res.ok) {
+        input.value = "";
+        document.getElementById("chat-counter").textContent = "0 / 300";
+        document.getElementById("chat-counter").className   = "chat-counter";
+        input.style.height = "";
+        isAtBottom = true;
+        if (pollTimer) {
+          clearTimeout(pollTimer);
+          poll();
+        }
+      } else {
+        const data = await res.json();
+        toast(data.error || "Error al enviar", "error");
+      }
+    } catch (_) {
+      toast("Error de conexión", "error");
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ── Delete ──────────────────────────────────────────────────
+  async function deleteMsg(id) {
+    try {
+      const res = await fetch(`${API}/chat/messages/${id}`, {
+        method:  "DELETE",
+        headers: headers(),
+      });
+      if (res.ok) {
+        document.querySelector(`.chat-msg[data-id="${id}"]`)?.remove();
+        const empty = document.getElementById("chat-messages");
+        if (empty && !empty.querySelector(".chat-msg")) {
+          empty.innerHTML = '<div class="chat-empty" id="chat-empty"><i class="bi bi-chat-square-dots"></i><span>No hay mensajes aún. ¡Sé el primero!</span></div>';
+        }
+      }
+    } catch (_) {}
+  }
+
+  // ── Scroll detection ────────────────────────────────────────
+  document.getElementById("chat-messages").addEventListener("scroll", function () {
+    isAtBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 60;
+  });
+
+  // ── Input auto-resize + counter ─────────────────────────────
+  const chatInput = document.getElementById("chat-input");
+  chatInput.addEventListener("input", function () {
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 80) + "px";
+    const len = this.value.length;
+    const counter = document.getElementById("chat-counter");
+    counter.textContent = `${len} / 300`;
+    counter.className   = `chat-counter${len > 260 ? " warn" : ""}`;
+  });
+
+  chatInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  document.getElementById("chat-send").addEventListener("click", sendMessage);
+
+  // ── Init ────────────────────────────────────────────────────
+  poll();
+</script>
+</body>
+</html>

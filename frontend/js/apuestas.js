@@ -40,7 +40,7 @@ function formatFecha(fechaStr) {
 }
 
 function estaAbierto(partido) {
-  const deadline = new Date(partido.fecha).getTime() - 24 * 60 * 60 * 1000;
+  const deadline = new Date(partido.fecha).getTime() - 1 * 60 * 60 * 1000;
   return !partido.finalizado && Date.now() < deadline;
 }
 
@@ -67,6 +67,42 @@ let partidos       = [];
 let faseActiva     = "";
 let soloSinApostar = false;
 
+// ── Stadium image lazy-loader ──────────────────────────────────
+const _imgCache = new Map(); // pid (string) → base64
+
+const _imgObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    _imgObserver.unobserve(entry.target);
+    const pid  = entry.target.dataset.pid;
+    const imgs = entry.target.querySelectorAll(".stadium-img-lazy");
+    imgs.forEach(imgEl => _loadStadiumImg(pid, imgEl));
+  });
+}, { rootMargin: "400px 0px" });
+
+async function _loadStadiumImg(pid, imgEl) {
+  if (!imgEl) return;
+  if (_imgCache.has(pid)) {
+    imgEl.src = _imgCache.get(pid);
+    imgEl.style.opacity = "1";
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/partidos/${pid}/imagen`, { headers: headers() });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.imagen_estadio) {
+      _imgCache.set(pid, data.imagen_estadio);
+      imgEl.src = data.imagen_estadio;
+      imgEl.style.opacity = "1";
+    }
+  } catch (_) {}
+}
+
+function _observeStadiumImages() {
+  document.querySelectorAll(".stadium-lazy-wrap").forEach(el => _imgObserver.observe(el));
+}
+
 function mostrarSkeleton() {
   document.getElementById("partidos-grid").innerHTML = Array(6).fill(0).map(() => `
     <div class="match-card placeholder-glow" style="cursor:default">
@@ -83,10 +119,10 @@ function mostrarSkeleton() {
 
 function updateStatsBar() {
   const total       = partidos.length;
-  const apostados   = partidos.filter(p => p.goles_local_apostado !== null && p.goles_local_apostado !== undefined).length;
+  const apostados   = partidos.filter(p => p.prediccion != null).length;
   const abiertos    = partidos.filter(p => estaAbierto(p));
-  const pendientes  = abiertos.filter(p => p.goles_local_apostado === null || p.goles_local_apostado === undefined).length;
-  const finalizados = partidos.filter(p => p.finalizado && p.goles_local_apostado !== null && p.goles_local_apostado !== undefined);
+  const pendientes  = abiertos.filter(p => p.prediccion == null).length;
+  const finalizados = partidos.filter(p => p.finalizado && p.prediccion != null);
   const pts         = finalizados.reduce((acc, p) => acc + calcularPuntosLocal(p), 0);
   const pct         = total > 0 ? Math.round(apostados / total * 100) : 0;
   const barColor    = pct === 100 ? "var(--green)" : pct >= 50 ? "var(--gold)" : "#fb923c";
@@ -108,11 +144,27 @@ function updateStatsBar() {
   });
 }
 
-async function cargarPartidos() {
+async function cargarPartidos(forceFresh = false) {
+  if (!forceFresh) {
+    try {
+      const raw = sessionStorage.getItem("polla_p_v1");
+      if (raw) {
+        const { d, t } = JSON.parse(raw);
+        if (Date.now() - t < 30000) {
+          partidos = d;
+          construirTabs();
+          renderPartidos();
+          updateStatsBar();
+          return;
+        }
+      }
+    } catch (_) {}
+  }
   mostrarSkeleton();
   try {
     const res = await fetch(`${API}/partidos`, { headers: headers() });
     partidos  = await res.json();
+    try { sessionStorage.setItem("polla_p_v1", JSON.stringify({ d: partidos, t: Date.now() })); } catch (_) {}
     construirTabs();
     renderPartidos();
     updateStatsBar();
@@ -165,7 +217,7 @@ function construirTabs() {
 function renderPartidos() {
   const grid = document.getElementById("partidos-grid");
   let lista  = partidos.filter(p => p.fase === faseActiva).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  if (soloSinApostar) lista = lista.filter(p => estaAbierto(p) && (p.goles_local_apostado === null || p.goles_local_apostado === undefined));
+  if (soloSinApostar) lista = lista.filter(p => estaAbierto(p) && p.prediccion == null);
   if (!lista.length) {
     grid.innerHTML = soloSinApostar
       ? `<div class="empty-state"><span class="empty-icon">✅</span><h3>¡Todo apostado en esta fase!</h3><p>Ya registraste apuesta en todos los partidos abiertos.</p></div>`
@@ -182,11 +234,17 @@ function renderPartidos() {
     if (btn) btn.addEventListener("click", () => registrarApuesta(p.id));
   });
   _staggerCards(grid);
+  _observeStadiumImages();
 }
 
 function renderGruposAccordion(grid, lista) {
-  const featured  = lista.slice(0, 3);
-  const rest      = lista.slice(3);
+  const ahora    = new Date();
+  const featured = lista
+    .filter(p => !p.finalizado && new Date(p.fecha) > ahora)
+    .slice(0, 3);
+
+  const featuredIds = new Set(featured.map(p => p.id));
+  const rest        = lista.filter(p => !featuredIds.has(p.id));
 
   const grupos = {};
   rest.forEach(p => {
@@ -195,49 +253,50 @@ function renderGruposAccordion(grid, lista) {
     grupos[g].push(p);
   });
 
-  const featuredHTML = `
-    <div class="grupos-featured-label"><i class="bi bi-star-fill me-2" style="color:var(--gold)"></i>Primeros partidos del Mundial</div>
+  const featuredHTML = featured.length ? `
+    <div class="grupos-featured-label"><i class="bi bi-clock me-2" style="color:var(--gold)"></i>Próximos partidos...</div>
     <div class="grupos-featured-grid">
       ${featured.map(p => tarjetaPartido(p)).join("")}
     </div>
-    <div class="grupos-section-label"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Partidos por grupo</div>`;
+    <div class="grupos-section-label"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Partidos por grupo</div>` : `
+    <div class="grupos-section-label" style="margin-top:0"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Partidos por grupo</div>`;
 
-  const accordionId = "accordion-grupos";
-  const accordionItems = Object.entries(grupos)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([grupo, ps], idx) => {
-      const collapseId  = `collapse-grupo-${idx}`;
-      const isFirst     = idx === 0;
-      const pendientes  = ps.filter(p => estaAbierto(p) && (p.goles_local_apostado === null || p.goles_local_apostado === undefined)).length;
-      return `
-        <div class="accordion-item" style="background:var(--card-bg);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:.6rem;overflow:hidden">
-          <h2 class="accordion-header">
-            <button class="accordion-button ${isFirst ? "" : "collapsed"}" type="button"
-              data-bs-toggle="collapse" data-bs-target="#${collapseId}"
-              style="background:var(--card-bg);color:#e8eef7;box-shadow:none;padding:.85rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px">
-              <i class="bi bi-grid-3x3-gap-fill" style="color:var(--gold);font-size:.9rem"></i>
-              ${escHtml(grupo)}
-              <span style="font-family:system-ui,sans-serif;font-size:.75rem;font-weight:400;color:var(--text-sub);margin-left:.2rem">${ps.length} partidos</span>
-              ${pendientes > 0 ? `<span class="tab-badge">${pendientes}</span>` : ""}
-            </button>
-          </h2>
-          <div id="${collapseId}" class="accordion-collapse collapse ${isFirst ? "show" : ""}">
-            <div class="accordion-body" style="padding:.75rem .75rem 1rem;background:rgba(0,0,0,.12)">
-              <div class="grupos-mini-grid">
-                ${ps.map(p => tarjetaPartido(p)).join("")}
-              </div>
-            </div>
-          </div>
-        </div>`;
-    }).join("");
+  const grupoKeys = Object.keys(grupos).sort((a, b) => a.localeCompare(b));
 
-  grid.innerHTML = `<div style="grid-column:1/-1;width:100%">${featuredHTML}<div class="accordion accordion-flush" id="${accordionId}">${accordionItems}</div></div>`;
+  const tabsRow = `
+    <div class="grupo-tabs" id="grupo-tabs">
+      ${grupoKeys.map((g, i) => {
+        const pend = grupos[g].filter(p => estaAbierto(p) && p.prediccion == null).length;
+        return `<button class="grupo-tab${i === 0 ? " active" : ""}" data-grupo="${escHtml(g)}">
+          ${escHtml(g)}${pend > 0 ? `<span class="tab-badge">${pend}</span>` : ""}
+        </button>`;
+      }).join("")}
+    </div>`;
+
+  const panels = grupoKeys.map((g, i) => `
+    <div class="grupo-panel${i === 0 ? "" : " grupo-panel-hidden"}" data-grupo="${escHtml(g)}">
+      <div class="grupos-mini-grid">${grupos[g].map(p => tarjetaPartido(p)).join("")}</div>
+    </div>`).join("");
+
+  grid.innerHTML = `<div style="grid-column:1/-1;width:100%">${featuredHTML}${tabsRow}<div class="grupo-panels">${panels}</div></div>`;
+
+  grid.querySelectorAll(".grupo-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      grid.querySelectorAll(".grupo-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      grid.querySelectorAll(".grupo-panel").forEach(p => p.classList.add("grupo-panel-hidden"));
+      grid.querySelector(`.grupo-panel[data-grupo="${btn.dataset.grupo}"]`).classList.remove("grupo-panel-hidden");
+      _staggerCards(grid);
+      _observeStadiumImages();
+    });
+  });
 
   lista.forEach(p => {
     const btn = document.getElementById(`btn-apostar-${p.id}`);
     if (btn) btn.addEventListener("click", () => registrarApuesta(p.id));
   });
   _staggerCards(grid);
+  _observeStadiumImages();
 }
 
 function _staggerCards(container) {
@@ -427,12 +486,31 @@ function buildEquipoCardHTML(flag, name, info) {
     </div>`;
 }
 
+function _predLabel(pred, p) {
+  if (pred === "L") return `${p.bandera_local} ${escHtml(p.equipo_local)} gana`;
+  if (pred === "V") return `${p.bandera_visita} ${escHtml(p.equipo_visita)} gana`;
+  return "🤝 Empate";
+}
+
 function _setModalBetArea(p) {
+  const desbloqueado = estaDesbloqueado(p);
   const abierto    = estaAbierto(p);
-  const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
+  const yaApostado = p.prediccion != null;
   const intentos   = p.intentos || 0;
   const bloqueado  = yaApostado && intentos >= 2;
   const betEl      = document.getElementById("modal-bet-area");
+
+  if (!desbloqueado) {
+    const dias = diasParaDesbloqueo(p);
+    betEl.innerHTML = `
+      <div class="modal-bet-inner" style="text-align:center;padding:1.25rem 0">
+        <div class="bet-locked-msg" style="justify-content:center;font-size:.9rem;gap:.6rem">
+          <i class="bi bi-lock-fill" style="font-size:1.1rem;color:rgba(255,255,255,.35)"></i>
+          <span>Se desbloquea en <strong>${dias} día${dias !== 1 ? "s" : ""}</strong></span>
+        </div>
+      </div>`;
+    return;
+  }
 
   if (abierto && !bloqueado) {
     const attemptDots = yaApostado ? `
@@ -445,19 +523,13 @@ function _setModalBetArea(p) {
       <div class="modal-bet-inner">
         <span class="modal-bet-label">
           <i class="bi bi-${yaApostado ? "pencil-fill" : "check-circle"}"></i>
-          ${yaApostado ? "Actualizar apuesta" : "Registrar apuesta"}
+          ${yaApostado ? "Actualizar apuesta" : "¿Quién gana?"}
         </span>
         ${attemptDots}
-        <div class="bet-inputs" style="justify-content:center;gap:1.2rem;margin:.75rem 0">
-          <input type="number" class="bet-input" min="0" max="10"
-            value="${yaApostado ? p.goles_local_apostado : 0}"
-            id="modal-gl-${p.id}"
-            style="width:60px;font-size:1.4rem;text-align:center;padding:.35rem" />
-          <span class="bet-separator" style="font-size:1.4rem;line-height:1">–</span>
-          <input type="number" class="bet-input" min="0" max="10"
-            value="${yaApostado ? p.goles_visita_apostado : 0}"
-            id="modal-gv-${p.id}"
-            style="width:60px;font-size:1.4rem;text-align:center;padding:.35rem" />
+        <div class="pred-btns" id="modal-pred-${p.id}" style="margin:.75rem 0">
+          <button class="pred-btn${p.prediccion === "L" ? " active" : ""}" data-pred="L">${p.bandera_local} ${escHtml(p.equipo_local)}</button>
+          <button class="pred-btn${p.prediccion === "E" ? " active" : ""}" data-pred="E">🤝 Empate</button>
+          <button class="pred-btn${p.prediccion === "V" ? " active" : ""}" data-pred="V">${p.bandera_visita} ${escHtml(p.equipo_visita)}</button>
         </div>
         <button class="btn-fifa-green w-100" id="modal-btn-apostar-${p.id}">
           <i class="bi bi-${yaApostado ? "pencil" : "check-circle"} me-1"></i>
@@ -470,7 +542,7 @@ function _setModalBetArea(p) {
     betEl.innerHTML = `
       <div class="modal-bet-inner">
         <span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span>
-        <div class="modal-bet-score">${p.goles_local_apostado} – ${p.goles_visita_apostado}</div>
+        <div class="modal-bet-score">${_predLabel(p.prediccion, p)}</div>
         <div class="attempt-dots" style="justify-content:center;margin-top:.6rem">
           <span class="adot used"></span><span class="adot used"></span>
           <span style="font-size:.7rem;color:var(--red);margin-left:.3rem">
@@ -481,12 +553,12 @@ function _setModalBetArea(p) {
   } else if (yaApostado) {
     const pts = p.finalizado ? calcularPuntosLocal(p) : null;
     const ptsBadge = pts !== null
-      ? `<span class="pts-badge ${pts===3?"pts-3":pts===1?"pts-1":"pts-0"}" style="font-size:.82rem">${pts===3?"⭐":pts===1?"✓":"✗"} ${pts} pts</span>`
+      ? `<span class="pts-badge ${pts===1?"pts-1":"pts-0"}" style="font-size:.82rem">${pts===1?"✓":"✗"} ${pts} pt</span>`
       : "";
     betEl.innerHTML = `
       <div class="modal-bet-inner">
         <span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span>
-        <div class="modal-bet-score">${p.goles_local_apostado} – ${p.goles_visita_apostado}</div>
+        <div class="modal-bet-score">${_predLabel(p.prediccion, p)}</div>
         ${ptsBadge}
         <span class="modal-intentos"><i class="bi bi-arrow-repeat"></i>${intentos}/2 intentos</span>
       </div>`;
@@ -500,10 +572,26 @@ function _setModalBetArea(p) {
 
 function showModalPartido(p) {
   const abierto    = estaAbierto(p);
-  const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
+  const yaApostado = p.prediccion != null;
   const intentos   = p.intentos || 0;
   bootstrap.Tab.getOrCreateInstance(document.querySelector("#modalTabs .nav-link")).show();
-  document.getElementById("modal-hero").style.backgroundImage = p.imagen_estadio ? `url(${p.imagen_estadio})` : "";
+  const _heroEl = document.getElementById("modal-hero");
+  _heroEl.style.backgroundImage = "";
+  if (p.tiene_imagen) {
+    const _pid = String(p.id);
+    if (_imgCache.has(_pid)) {
+      _heroEl.style.backgroundImage = `url(${_imgCache.get(_pid)})`;
+    } else {
+      fetch(`${API}/partidos/${p.id}/imagen`, { headers: headers() })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.imagen_estadio) {
+            _imgCache.set(_pid, d.imagen_estadio);
+            _heroEl.style.backgroundImage = `url(${d.imagen_estadio})`;
+          }
+        }).catch(() => {});
+    }
+  }
   document.getElementById("modal-phase-chip").textContent = `${p.fase}${p.grupo ? " · Grupo " + p.grupo : ""}`;
   document.getElementById("modal-venue").textContent      = p.nombre_estadio || "";
   document.getElementById("modal-flag-l").textContent = p.bandera_local;
@@ -554,18 +642,36 @@ document.getElementById("partidos-grid").addEventListener("click", (e) => {
   if (p) showModalPartido(p);
 });
 
+const UNLOCK_DAYS = 7;
+
+function diasParaDesbloqueo(p) {
+  const ms = new Date(p.fecha) - new Date();
+  return Math.ceil(ms / 86400000) - UNLOCK_DAYS;
+}
+
+function estaDesbloqueado(p) {
+  if (p.finalizado) return true;
+  return diasParaDesbloqueo(p) <= 0;
+}
+
 function tarjetaPartido(p) {
+  const desbloqueado = estaDesbloqueado(p);
   const abierto    = estaAbierto(p);
-  const yaApostado = p.goles_local_apostado !== null && p.goles_local_apostado !== undefined;
+  const yaApostado = p.prediccion != null;
   const intentos   = p.intentos || 0;
   const bloqueado  = yaApostado && intentos >= 2;
-  const clases     = ["match-card", p.finalizado ? "finalizado" : "", yaApostado ? "apostado" : ""].join(" ");
+  const clases     = ["match-card",
+    p.finalizado ? "finalizado" : "",
+    yaApostado   ? "apostado"   : "",
+    !desbloqueado ? "card-locked" : ""
+  ].filter(Boolean).join(" ");
+
   let puntosCorner = "";
   if (p.finalizado && yaApostado) {
     const pts = calcularPuntosLocal(p);
-    const cls = pts === 3 ? "pts-3" : pts === 1 ? "pts-1" : "pts-0";
-    const ico = pts === 3 ? "⭐" : pts === 1 ? "✓" : "✗";
-    puntosCorner = `<span class="pts-badge-corner ${cls}">${ico} ${pts} pts</span>`;
+    const cls = pts === 1 ? "pts-1" : "pts-0";
+    const ico = pts === 1 ? "✓" : "✗";
+    puntosCorner = `<span class="pts-badge-corner ${cls}">${ico} ${pts} pt</span>`;
   }
   const centroVS = p.finalizado
     ? `<div class="result-score">${p.goles_local} – ${p.goles_visita}</div>`
@@ -579,38 +685,38 @@ function tarjetaPartido(p) {
       </span>
     </div>` : "";
   let apuestaHTML;
-  if (abierto && !bloqueado) {
+  if (!desbloqueado) {
+    const dias = diasParaDesbloqueo(p);
+    apuestaHTML = `<div class="bet-section bet-locked-section">
+      <div class="bet-locked-msg">
+        <i class="bi bi-lock-fill"></i>
+        <span>Se desbloquea en <strong>${dias} día${dias !== 1 ? "s" : ""}</strong></span>
+      </div>
+    </div>`;
+  } else if (abierto && !bloqueado) {
     apuestaHTML = `<div class="bet-section">${attemptDots}
-      <div class="bet-inputs">
-        <input type="number" class="bet-input" min="0" max="10" value="${yaApostado ? p.goles_local_apostado : 0}" id="gl-${p.id}" />
-        <span class="bet-separator">–</span>
-        <input type="number" class="bet-input" min="0" max="10" value="${yaApostado ? p.goles_visita_apostado : 0}" id="gv-${p.id}" />
+      <div class="pred-btns" id="pred-${p.id}">
+        <button class="pred-btn${p.prediccion === 'L' ? ' active' : ''}" data-pred="L">${p.bandera_local} ${escHtml(p.equipo_local)}</button>
+        <button class="pred-btn${p.prediccion === 'E' ? ' active' : ''}" data-pred="E">🤝 Empate</button>
+        <button class="pred-btn${p.prediccion === 'V' ? ' active' : ''}" data-pred="V">${p.bandera_visita} ${escHtml(p.equipo_visita)}</button>
       </div>
       <button class="btn-fifa-green w-100 mt-2" id="btn-apostar-${p.id}">
         <i class="bi bi-${yaApostado ? 'pencil' : 'check-circle'} me-1"></i>${yaApostado ? "Actualizar apuesta" : "Apostar"}
       </button></div>`;
   } else if (abierto && bloqueado) {
     apuestaHTML = `<div class="bet-section">${attemptDots}
-      <div class="bet-inputs">
-        <input type="number" class="bet-input" value="${p.goles_local_apostado}" disabled />
-        <span class="bet-separator">–</span>
-        <input type="number" class="bet-input" value="${p.goles_visita_apostado}" disabled />
-      </div>
+      <div class="pred-tag pred-${p.prediccion}">${_predLabel(p.prediccion, p)}</div>
       <p class="match-closed-msg mt-2" style="color:var(--red)"><i class="bi bi-lock-fill me-1"></i>Límite de 2 intentos alcanzado</p></div>`;
   } else if (yaApostado) {
     apuestaHTML = `<div class="bet-section">
-      <div class="bet-inputs">
-        <input type="number" class="bet-input" value="${p.goles_local_apostado}" disabled />
-        <span class="bet-separator">–</span>
-        <input type="number" class="bet-input" value="${p.goles_visita_apostado}" disabled />
-      </div>
+      <div class="pred-tag pred-${p.prediccion}">${_predLabel(p.prediccion, p)}</div>
       <p class="match-closed-msg mt-1"><i class="bi bi-lock me-1"></i>Apuesta cerrada</p></div>`;
   } else {
     apuestaHTML = `<div class="bet-section"><p class="match-closed-msg m-0" style="padding:.3rem 0"><i class="bi bi-slash-circle me-1"></i>No apostaste en este partido</p></div>`;
   }
-  const estadioHTML = p.imagen_estadio ? `
-    <div class="match-stadium">
-      <img src="${p.imagen_estadio}" alt="${escHtml(p.nombre_estadio || 'Estadio')}" loading="lazy" />
+  const estadioHTML = p.tiene_imagen ? `
+    <div class="match-stadium stadium-lazy-wrap" data-pid="${p.id}">
+      <img class="stadium-img-lazy" src="" alt="${escHtml(p.nombre_estadio || 'Estadio')}" style="opacity:0;transition:opacity .3s" />
       <div class="match-stadium-overlay">
         <span class="match-phase-badge" style="margin:0">${escHtml(p.fase)}${p.grupo ? ` · ${escHtml(p.grupo)}` : ""}</span>
         ${p.nombre_estadio ? `<span class="match-stadium-name">${escHtml(p.nombre_estadio)}</span>` : ""}
@@ -632,33 +738,29 @@ function tarjetaPartido(p) {
 }
 
 function calcularPuntosLocal(p) {
-  const gl = p.goles_local_apostado, gv = p.goles_visita_apostado;
-  const rl = p.goles_local, rv = p.goles_visita;
-  if (gl === rl && gv === rv) return 3;
-  const ganReal = rl > rv ? "L" : rv > rl ? "V" : "E";
-  const ganAp   = gl > gv ? "L" : gv > gl ? "V" : "E";
-  return ganReal === ganAp ? 1 : 0;
+  if (!p.finalizado || p.prediccion == null) return 0;
+  const ganReal = p.goles_local > p.goles_visita ? "L" : p.goles_visita > p.goles_local ? "V" : "E";
+  return p.prediccion === ganReal ? 1 : 0;
 }
 
-function _actualizarPartidoLocal(idPartido, gl, gv) {
+function _actualizarPartidoLocal(idPartido, prediccion) {
   const idx = partidos.findIndex(p => p.id === idPartido);
   if (idx > -1) {
-    partidos[idx].goles_local_apostado  = gl;
-    partidos[idx].goles_visita_apostado = gv;
+    partidos[idx].prediccion = prediccion;
     partidos[idx].intentos = (partidos[idx].intentos || 0) + 1;
   }
 }
 
 async function registrarApuesta(idPartido) {
-  const gl = parseInt(document.getElementById(`gl-${idPartido}`).value);
-  const gv = parseInt(document.getElementById(`gv-${idPartido}`).value);
-  if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) { toast("Marcador inválido", "error"); return; }
+  const pred = document.querySelector(`#pred-${idPartido} .pred-btn.active`)?.dataset.pred;
+  if (!pred) { toast("Selecciona Local, Empate o Visita", "error"); return; }
   try {
-    const res  = await fetch(`${API}/apostar`, { method: "POST", headers: headers(), body: JSON.stringify({ id_partido: idPartido, goles_local_apostado: gl, goles_visita_apostado: gv }) });
+    const res  = await fetch(`${API}/apostar`, { method: "POST", headers: headers(), body: JSON.stringify({ id_partido: idPartido, prediccion: pred }) });
     const data = await res.json();
     if (!res.ok) { toast(data.error || "Error al apostar", "error"); return; }
     toast("✅ Apuesta guardada");
-    _actualizarPartidoLocal(idPartido, gl, gv);
+    _actualizarPartidoLocal(idPartido, pred);
+    try { sessionStorage.setItem("polla_p_v1", JSON.stringify({ d: partidos, t: Date.now() })); } catch (_) {}
     renderPartidos();
     updateStatsBar();
     construirTabs();
@@ -666,13 +768,12 @@ async function registrarApuesta(idPartido) {
 }
 
 async function registrarApuestaModal(idPartido) {
-  const gl = parseInt(document.getElementById(`modal-gl-${idPartido}`)?.value);
-  const gv = parseInt(document.getElementById(`modal-gv-${idPartido}`)?.value);
-  if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) { toast("Marcador inválido", "error"); return; }
+  const pred = document.querySelector(`#modal-pred-${idPartido} .pred-btn.active`)?.dataset.pred;
+  if (!pred) { toast("Selecciona Local, Empate o Visita", "error"); return; }
   const btn = document.getElementById(`modal-btn-apostar-${idPartido}`);
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-wc"></span> Guardando...'; }
   try {
-    const res  = await fetch(`${API}/apostar`, { method: "POST", headers: headers(), body: JSON.stringify({ id_partido: idPartido, goles_local_apostado: gl, goles_visita_apostado: gv }) });
+    const res  = await fetch(`${API}/apostar`, { method: "POST", headers: headers(), body: JSON.stringify({ id_partido: idPartido, prediccion: pred }) });
     const data = await res.json();
     if (!res.ok) {
       toast(data.error || "Error al apostar", "error");
@@ -680,7 +781,8 @@ async function registrarApuestaModal(idPartido) {
       return;
     }
     toast("✅ Apuesta guardada");
-    _actualizarPartidoLocal(idPartido, gl, gv);
+    _actualizarPartidoLocal(idPartido, pred);
+    try { sessionStorage.setItem("polla_p_v1", JSON.stringify({ d: partidos, t: Date.now() })); } catch (_) {}
     const pUpd = partidos.find(x => x.id === idPartido);
     if (pUpd) _setModalBetArea(pUpd);
     renderPartidos();
@@ -691,6 +793,16 @@ async function registrarApuestaModal(idPartido) {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apostar'; }
   }
 }
+
+// Delegation handler for pred-btn selection (cards + modal)
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".pred-btn");
+  if (!btn) return;
+  const wrap = btn.closest(".pred-btns");
+  if (!wrap) return;
+  wrap.querySelectorAll(".pred-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+});
 
 (function() {
   const btn = document.createElement("button");

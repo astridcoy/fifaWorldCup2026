@@ -3,7 +3,8 @@ const ROL    = localStorage.getItem("rol") || "usuario";
 const YO_ID  = parseInt(localStorage.getItem("id") || "0");
 const NOMBRE = localStorage.getItem("nombre") || "";
 
-if (!TOKEN) window.location.href = "login.html";
+if (!TOKEN) { location.replace("login.html"); }
+else { document.documentElement.style.display = ""; }
 
 function headers() {
   return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };

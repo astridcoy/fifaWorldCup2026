@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <script>if(!localStorage.getItem("token")){document.documentElement.style.display="none";location.replace("login.html");}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juega FIFA World Cup 2026 — Mis Apuestas</title>
+  <title>Pollatouch Mundial 2026 — Mis Apuestas</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,12 +16,13 @@
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="sidebar-drawer" id="sidebar-drawer">
   <div class="sidebar-header">
-    <div class="sidebar-brand">JUEGA <span>FIFA</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
+    <div class="sidebar-brand">POLLATOUCH <span>MUNDIAL</span> 2026 <span class="navbar-hosts"><span class="hflag">🇺🇸</span><span class="hflag">🇨🇦</span><span class="hflag">🇲🇽</span></span></div>
     <button class="sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
   </div>
   <nav class="sidebar-nav">
     <a href="index.html" class="sidebar-link active"><i class="bi bi-controller"></i> Mis Apuestas</a>
     <a href="ranking.html" class="sidebar-link"><i class="bi bi-trophy"></i> Ranking</a>
+    <a href="#" class="sidebar-link" onclick="event.preventDefault(); openChatWidget()"><i class="bi bi-chat-dots"></i> Chat</a>
     <a href="perfil.html" class="sidebar-link"><i class="bi bi-person-circle"></i> Perfil</a>
     <div class="sidebar-divider"></div>
     <a href="admin.html" class="sidebar-link sidebar-link-admin" id="sidebar-admin-link"><i class="bi bi-gear"></i> Panel Admin</a>
@@ -36,7 +38,7 @@
     <button class="nav-hamburger" id="nav-hamburger"><i class="bi bi-list"></i></button>
     <a class="navbar-brand-wc" href="index.html">
       <img src="img/fifa2026-logo.png" class="navbar-logo" alt="FIFA 2026" />
-      JUEGA <span>FIFA WORLD CUP</span> 2026
+      POLLATOUCH <span>MUNDIAL</span> 2026
       <span class="navbar-hosts">
         <span class="hflag" title="USA">🇺🇸</span>
         <span class="hflag" title="Canada">🇨🇦</span>
@@ -48,6 +50,7 @@
     <a href="ranking.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-trophy me-1"></i> Ranking
     </a>
+
     <a href="perfil.html" class="btn-fifa-outline d-none d-sm-inline-block">
       <i class="bi bi-person-circle me-1"></i> Perfil
     </a>
@@ -57,86 +60,7 @@
   </div>
 </nav>
 
-<!-- Hero Carousel -->
-<div class="hero-carousel-wrap">
-  <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-    <div class="carousel-inner">
 
-      <div class="carousel-item active">
-        <div class="hero-carousel-item h1">
-          <img src="img/fifa.jpg" alt="FIFA 2026" />
-          <div class="hero-slide-content">
-            <div class="hero-badge"><img src="img/fifa2026-logo.png" style="height:18px;width:auto;vertical-align:middle;margin-right:5px;object-fit:contain" alt="" />FIFA WORLD CUP™ 2026</div>
-            <h2>ONLY <span>FORWARD</span></h2>
-            <h2>SOLO <span>HACIA</span> ADELANTE</h2>
-            <p>48 equipos · 104 partidos · 16 sedes en 3 países</p>
-          </div>
-        </div>
-      </div>
-
-
-      <div class="carousel-item">
-        <div class="hero-carousel-item h2">
-          <img src="img/host-map.jpg" alt="Sedes" />
-          <div class="hero-slide-content">
-            <div class="hero-badge">🌎 PAÍSES SEDE</div>
-            <h2><span class="hero-flags">🇺🇸 🇨🇦 🇲🇽</span></h2>
-            <p>Estados Unidos · Canadá · México — 11 jun al 19 jul 2026</p>
-          </div>
-        </div>
-      </div>
-
-
-      <div class="carousel-item">
-        <div class="hero-carousel-item h2">
-          <img src="img/estadio.jpg" alt="Estadio" />
-          <div class="hero-slide-content">
-            <h2>AZTECA ·<span> STADIUM</span></h2>
-            <p> Ciudad de México </p>
-          </div>
-        </div>
-      </div>
-
-
-
-      <div class="carousel-item">
-        <div class="hero-carousel-item h3">
-          <img src="img/host-cities.jpg" alt="Host Cities" />
-          <div class="hero-slide-content">
-            <div class="hero-badge">⚽ TU APUESTA</div>
-            <h2>APUESTA Y <span>GANA</span></h2>
-            <p>Exacto = 3 pts · Ganador = 1 pt · Campeón = 5 pts</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="carousel-item">
-        <div class="hero-carousel-item h2">
-          <img src="img/canada-cities.jpg" alt="Canadá" />
-          <div class="hero-slide-content">
-            <div class="hero-badge">🇨🇦 CANADÁ</div>
-            <h2>VANCOUVER · <span>TORONTO</span></h2>
-            <p>FIFA World Cup 2026™ Host Cities</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" aria-label="Anterior">
-      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="Siguiente">
-      <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    </button>
-    <div class="carousel-indicators" style="bottom:.5rem">
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-label="Diapositiva 1"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Diapositiva 2"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Diapositiva 3"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Diapositiva 4"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="4" aria-label="Diapositiva 5"></button>
-    </div>
-  </div>
-</div>
 
 <div class="page-wrap">
 
@@ -160,7 +84,7 @@
       <select id="sel-campeon" class="form-select">
         <option value="">— Elige un país —</option>
       </select>
-      <button class="btn-fifa-gold" id="btn-campeon">
+      <button class="btn-fifa-campeon" id="btn-campeon">
         <i class="bi bi-star me-1"></i> Apostar campeón
       </button>
     </div>
@@ -184,6 +108,7 @@
 <script src="security.js"></script>
 <script src="js/config.js"></script>
 <script src="js/shared.js"></script>
+<script src="js/chat-widget.js"></script>
 <script src="js/apuestas.js"></script>
 
 <!-- ══ Match Detail Modal ══ -->
@@ -271,7 +196,7 @@
     <div class="footer-brand-col">
       <div class="d-flex align-items-center gap-2 mb-2">
         <img src="img/fifa2026-logo.png" class="footer-logo" alt="FIFA 2026" />
-        <div class="footer-brand-name">JUEGA <span>FIFA WORLD CUP</span> 2026</div>
+        <div class="footer-brand-name">POLLATOUCH <span>MUNDIAL</span> 2026</div>
       </div>
       <p class="footer-tagline">Predice los marcadores de cada partido, apuesta al campeón y demuestra que eres el mayor experto futbolero de tu grupo.</p>
       <div class="footer-host-row">
@@ -295,7 +220,7 @@
     </div>
 
     <div>
-      <h4 class="footer-heading">Juega FIFA 2026</h4>
+      <h4 class="footer-heading">Pollatouch Mundial 2026</h4>
       <ul class="footer-links-list">
         <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
         <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
@@ -324,7 +249,7 @@
   </div>
   <div class="footer-bottom">
     <div class="footer-bottom-inner">
-      <span class="footer-copy">© 2026 Juega FIFA World Cup 2026 — Proyecto independiente no afiliado a FIFA.</span>
+      <span class="footer-copy">© 2026 Pollatouch Mundial 2026 — Proyecto independiente no afiliado a FIFA.</span>
       <span class="footer-disclaimer">FIFA™, FIFA World Cup™ y el trofeo de la Copa Mundial son marcas registradas de la Fédération Internationale de Football Association.</span>
     </div>
   </div>

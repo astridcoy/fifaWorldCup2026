@@ -221,12 +221,15 @@ def run_bet_reminders():
         """, (window_start, window_end))
         pendientes = cur.fetchall()
         for row in pendientes:
-            send_bet_reminder(row["email"], row["nombre"], dict(row))
+            # Claim the notification slot first; only send email if we won the race
             cur.execute("""
                 INSERT INTO notificaciones (id_usuario, id_partido, tipo)
                 VALUES (%s, %s, 'recordatorio_24h')
                 ON CONFLICT (id_usuario, id_partido, tipo) DO NOTHING
+                RETURNING id
             """, (row["uid"], row["id"]))
+            if cur.fetchone():
+                send_bet_reminder(row["email"], row["nombre"], dict(row))
         conn.commit()
         cur.close(); conn.close()
         if pendientes:
@@ -238,7 +241,23 @@ def run_bet_reminders():
 # ── Scheduler ────────────────────────────────────────────────────
 
 def start_scheduler():
-    """Inicia APScheduler en background. Falla silenciosamente si no está instalado."""
+    """
+    Inicia APScheduler en background solo en un proceso por instancia.
+    Con múltiples workers Gunicorn, cada proceso llama a esta función;
+    usamos un lock de archivo para garantizar que solo uno lo ejecute.
+    """
+    import os, fcntl
+    lock_path = "/tmp/polla_scheduler.lock"
+    try:
+        lock_fd = open(lock_path, "w")
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, IOError):
+        print("[scheduler] Otro worker ya tiene el lock — omitiendo")
+        return
+
+    # INSERT-first to avoid duplicate emails when multiple workers check simultaneously
+    # (run_bet_reminders already uses ON CONFLICT DO NOTHING before sending)
+
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
         from config import SANTIAGO

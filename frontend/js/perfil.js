@@ -6,6 +6,66 @@ const avatarImg  = document.getElementById("avatar-img");
 const avatarDef  = document.getElementById("avatar-default");
 const btnDelFoto = document.getElementById("btn-delete-foto");
 
+// ── Mood emojis ───────────────────────────────────────────────
+const MOODS = ["😊","😂","😍","🤔","😴","🤩","😅","🥳","😤","😢","🔥","⚽","🏆","💪","🤞","😎","🙏","😡","🥺","😇"];
+const moodGrid = document.getElementById("mood-grid");
+MOODS.forEach(em => {
+  const btn = document.createElement("button");
+  btn.type      = "button";
+  btn.className = "mood-btn";
+  btn.textContent = em;
+  btn.addEventListener("click", () => {
+    const cur = document.getElementById("p-estado-animo").value;
+    if (cur === em) {
+      document.getElementById("p-estado-animo").value = "";
+      btn.classList.remove("active");
+    } else {
+      document.querySelectorAll(".mood-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("p-estado-animo").value = em;
+      btn.classList.add("active");
+    }
+  });
+  moodGrid.appendChild(btn);
+});
+
+function setMood(em) {
+  document.getElementById("p-estado-animo").value = em || "";
+  document.querySelectorAll(".mood-btn").forEach(b => {
+    b.classList.toggle("active", b.textContent === em);
+  });
+}
+
+// ── Counters ──────────────────────────────────────────────────
+document.getElementById("p-estado").addEventListener("input", function () {
+  document.getElementById("estado-counter").textContent = `${this.value.length} / 150`;
+});
+document.getElementById("p-biografia").addEventListener("input", function () {
+  document.getElementById("bio-counter").textContent = `${this.value.length} / 500`;
+});
+
+// ── Song embed ────────────────────────────────────────────────
+function getSongEmbed(url) {
+  if (!url || !url.trim()) return null;
+  const u = url.trim();
+  const sp = u.match(/open\.spotify\.com(?:\/intl-[^/]+)?\/track\/([A-Za-z0-9]+)/);
+  if (sp) return { src: `https://open.spotify.com/embed/track/${sp[1]}?utm_source=generator`, h: 80 };
+  const yt = u.match(/(?:youtube\.com\/watch[?&]v=|music\.youtube\.com\/watch[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (yt) return { src: `https://www.youtube.com/embed/${yt[1]}`, h: 200 };
+  return null;
+}
+
+function renderSongPreview(url) {
+  const wrap = document.getElementById("cancion-preview");
+  const emb  = getSongEmbed(url);
+  if (!emb) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `<iframe class="cancion-embed" src="${emb.src}" height="${emb.h}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+}
+
+document.getElementById("p-cancion-url").addEventListener("input", function () {
+  renderSongPreview(this.value);
+});
+
+// ── Photo ─────────────────────────────────────────────────────
 function mostrarFoto(src) {
   avatarImg.src = src;
   avatarImg.classList.remove("d-none");
@@ -25,16 +85,33 @@ document.getElementById("btn-foto").addEventListener("click", () => inputFoto.cl
 inputFoto.addEventListener("change", () => {
   const file = inputFoto.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("La imagen no debe superar 2 MB", "error"); return; }
-  const reader = new FileReader();
-  reader.onload = e => { fotoBase64 = e.target.result; pendingDeleteFoto = false; mostrarFoto(fotoBase64); };
-  reader.readAsDataURL(file);
+  if (file.size > 10 * 1024 * 1024) { toast("La imagen no debe superar 10 MB", "error"); return; }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onerror = () => { URL.revokeObjectURL(url); toast("Imagen inválida", "error"); };
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const MAX = 300;
+    let { width: w, height: h } = img;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else        { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+    fotoBase64 = canvas.toDataURL("image/jpeg", 0.75);
+    pendingDeleteFoto = false;
+    mostrarFoto(fotoBase64);
+  };
+  img.src = url;
 });
 
 btnDelFoto.addEventListener("click", () => {
   fotoBase64 = null; pendingDeleteFoto = true; ocultarFoto(); inputFoto.value = "";
 });
 
+// ── Password toggle & strength ────────────────────────────────
 document.getElementById("toggle-pw").addEventListener("click", () => {
   const inp  = document.getElementById("p-password");
   const icon = document.getElementById("eye-icon");
@@ -61,10 +138,11 @@ document.getElementById("p-password").addEventListener("input", function () {
   const bar = document.getElementById("pw-bar");
   bar.style.width      = this.value ? `${score * 20}%` : "0";
   bar.style.background = color;
-  document.getElementById("pw-label").textContent  = label;
-  document.getElementById("pw-label").style.color  = color;
+  document.getElementById("pw-label").textContent = label;
+  document.getElementById("pw-label").style.color = color;
 });
 
+// ── Validation ────────────────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function validarEmail(val)    { return EMAIL_RE.test(val); }
 function validarPassword(val) { return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /\d/.test(val); }
@@ -87,6 +165,7 @@ document.getElementById("p-confirmar").addEventListener("input", function () {
   if (this.value || pw) setValidez("p-confirmar", this.value === pw);
 });
 
+// ── Load profile ──────────────────────────────────────────────
 async function cargarPerfil() {
   try {
     const res  = await fetch(`${API}/perfil`, { headers: headers() });
@@ -95,9 +174,23 @@ async function cargarPerfil() {
     document.getElementById("p-nombre").value = data.nombre || "";
     document.getElementById("p-email").value  = data.email  || "";
     if (data.foto_perfil) mostrarFoto(data.foto_perfil);
+    if (data.estado) {
+      document.getElementById("p-estado").value = data.estado;
+      document.getElementById("estado-counter").textContent = `${data.estado.length} / 150`;
+    }
+    if (data.biografia) {
+      document.getElementById("p-biografia").value = data.biografia;
+      document.getElementById("bio-counter").textContent = `${data.biografia.length} / 500`;
+    }
+    if (data.cancion_url) {
+      document.getElementById("p-cancion-url").value = data.cancion_url;
+      renderSongPreview(data.cancion_url);
+    }
+    setMood(data.estado_animo || "");
   } catch (_) { toast("Error de conexión", "error"); }
 }
 
+// ── Save profile ──────────────────────────────────────────────
 document.getElementById("btn-guardar").addEventListener("click", async () => {
   const nombre    = document.getElementById("p-nombre").value.trim();
   const email     = document.getElementById("p-email").value.trim();
@@ -123,7 +216,14 @@ document.getElementById("btn-guardar").addEventListener("click", async () => {
 
   if (!ok) return;
 
-  const body = { nombre, email };
+  const body = {
+    nombre,
+    email,
+    estado:        document.getElementById("p-estado").value.trim(),
+    biografia:     document.getElementById("p-biografia").value.trim(),
+    cancion_url:   document.getElementById("p-cancion-url").value.trim(),
+    estado_animo:  document.getElementById("p-estado-animo").value,
+  };
   if (password)           body.password    = password;
   if (fotoBase64)         body.foto_perfil = fotoBase64;
   else if (pendingDeleteFoto) body.foto_perfil = null;
@@ -140,8 +240,8 @@ document.getElementById("btn-guardar").addEventListener("click", async () => {
     localStorage.setItem("nombre", nombre);
     document.getElementById("p-password").value  = "";
     document.getElementById("p-confirmar").value = "";
-    document.getElementById("pw-bar").style.width      = "0";
-    document.getElementById("pw-label").textContent    = "";
+    document.getElementById("pw-bar").style.width   = "0";
+    document.getElementById("pw-label").textContent = "";
     fotoBase64 = null; pendingDeleteFoto = false;
     clearValidez("p-nombre", "p-email", "p-password", "p-confirmar");
   } catch (_) { toast("Error de conexión", "error"); }

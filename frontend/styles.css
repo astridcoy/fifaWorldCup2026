@@ -4,18 +4,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --navy:        #0A1628;
-  --navy-light:  #111f38;
-  --fifa-blue:   #003DA5;
-  --gold:        #F5B800;
-  --gold-dark:   #C99A00;
-  --green:       #00843D;
-  --green-dark:  #006B31;
-  --red:         #E8192C;
-  --card-bg:     #0f1e35;
-  --card-border: rgba(245,184,0,.18);
-  --text-sub:    #7a91b3;
-  --input-bg:    #0d1a2e;
+  --navy:         #003087;
+  --navy-light:   #0D40B0;
+  --navbar-bg1:   #1352BE;
+  --navbar-bg2:   #1A54C5;
+  --fifa-blue:    #1A54C5;
+  --gold:         #FEBC12;
+  --gold-dark:    #E0A800;
+  --green:        #00BFB3;
+  --green-dark:   #009E93;
+  --red:          #BD2229;
+  --red-dark:     #9E1B21;
+  --campeon:      #F1677F;
+  --campeon-dark: #D85070;
+  --card-bg:      #0B3EA0;
+  --card-border:  rgba(254,188,18,.18);
+  --text-sub:     #8BAFC8;
+  --input-bg:     #002070;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -28,7 +33,7 @@ body {
 
 /* ── Navbar ── */
 .navbar-wc {
-  background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 100%);
+  background: linear-gradient(135deg, var(--navbar-bg1) 0%, var(--navbar-bg2) 100%);
   border-bottom: 2px solid var(--gold);
   padding: .75rem 1.5rem;
   position: sticky;
@@ -72,7 +77,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 50%, #06120a 100%);
+  background: linear-gradient(135deg, #001F5C 0%, #003087 50%, #001A5C 100%);
   padding: 2rem 1rem;
   position: relative;
   overflow: hidden;
@@ -124,7 +129,7 @@ body {
   outline: none;
 }
 .form-control::placeholder { color: #4a5568 !important; }
-.form-select option { background: #0d1a2e; }
+.form-select option { background: var(--input-bg); }
 
 /* ── Buttons ── */
 .btn-fifa-green {
@@ -158,6 +163,22 @@ body {
 }
 .btn-fifa-gold:hover  { background: var(--gold-dark); color: var(--navy); transform: translateY(-1px); }
 .btn-fifa-gold:active { transform: translateY(0); }
+
+.btn-fifa-campeon {
+  background: var(--campeon);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: .6rem 1.2rem;
+  transition: background .2s, transform .1s;
+  cursor: pointer;
+  display: inline-block;
+  font-size: .95rem;
+}
+.btn-fifa-campeon:hover  { background: var(--campeon-dark); color: #fff; transform: translateY(-1px); }
+.btn-fifa-campeon:active { transform: translateY(0); }
+.btn-fifa-campeon:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
 .btn-fifa-outline {
   background: transparent;
@@ -205,6 +226,13 @@ body {
 .auth-footer a { color: var(--gold); text-decoration: none; font-weight: 600; }
 .auth-footer a:hover { text-decoration: underline; }
 
+/* ── Google sign-in ── */
+.auth-divider { display:flex; align-items:center; margin: 1rem 0; color:var(--text-sub); font-size:.8rem; letter-spacing:.5px; }
+.auth-divider::before, .auth-divider::after { content:""; flex:1; border-top:1px solid rgba(255,255,255,.12); }
+.auth-divider span { padding:0 .85rem; }
+#google-btn-container { width:100%; }
+#google-btn-container iframe { width:100% !important; }
+
 /* ── Page wrap ── */
 .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .page-header { margin-bottom: 2rem; }
@@ -219,8 +247,8 @@ body {
 
 /* ── Champion card ── */
 .campeon-card {
-  background: linear-gradient(135deg, #14253d 0%, #1a2f50 100%);
-  border: 1px solid rgba(245,184,0,.3);
+  background: linear-gradient(135deg, #0B3A9E 0%, #0E44B8 100%);
+  border: 1px solid rgba(254,188,18,.3);
   border-radius: 14px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -288,7 +316,7 @@ body {
 .phase-tab.active { background: var(--gold); border-color: var(--gold); color: var(--navy); }
 .tab-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  background: rgba(232,25,44,.7); color: #fff;
+  background: rgba(189,34,41,.8); color: #fff;
   font-family: 'Inter', sans-serif; font-size: .6rem; font-weight: 700;
   border-radius: 20px; padding: 0 .38rem; min-width: 16px; height: 16px;
   margin-left: .3rem; vertical-align: middle; line-height: 1;
@@ -314,6 +342,7 @@ body {
 }
 .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
 .scroll-top-btn:hover { background: var(--gold-dark); transform: translateY(-2px) !important; }
+
 
 /* Skeleton placeholder dark theme */
 .placeholder { background-color: rgba(255,255,255,.1) !important; }
@@ -482,6 +511,32 @@ body {
 }
 .match-closed-msg { text-align: center; color: var(--text-sub); font-size: .8rem; padding: .4rem 0; }
 
+/* ── Locked card ── */
+.card-locked {
+  opacity: .65;
+  filter: saturate(.4);
+}
+.card-locked:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--card-border) !important;
+}
+.bet-locked-section {
+  background: rgba(0,0,0,.3) !important;
+  border-color: rgba(255,255,255,.06) !important;
+}
+.bet-locked-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  color: var(--text-sub);
+  font-size: .82rem;
+  padding: .5rem 0;
+}
+.bet-locked-msg i { color: rgba(255,255,255,.3); font-size: .9rem; }
+.bet-locked-msg strong { color: #e2e8f0; }
+
 /* ── Points badge ── */
 .pts-badge {
   display: inline-block;
@@ -495,6 +550,51 @@ body {
 .pts-3 { background: rgba(245,184,0,.15); color: var(--gold); border: 1px solid rgba(245,184,0,.4); }
 .pts-1 { background: rgba(0,132,61,.15); color: #4ade80; border: 1px solid rgba(0,132,61,.4); }
 .pts-0 { background: rgba(232,25,44,.12); color: #f87171; border: 1px solid rgba(232,25,44,.3); }
+
+/* ── Prediction buttons (1X2) ── */
+.pred-btns {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.pred-btn {
+  flex: 1 1 auto;
+  padding: .5rem .75rem;
+  border: 1.5px solid rgba(255,255,255,.18);
+  border-radius: .5rem;
+  background: rgba(255,255,255,.06);
+  color: #e2e8f0;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  text-align: center;
+  white-space: nowrap;
+}
+.pred-btn:hover {
+  background: rgba(245,184,0,.15);
+  border-color: rgba(245,184,0,.5);
+  color: var(--gold);
+}
+.pred-btn.active {
+  background: rgba(245,184,0,.22);
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 8px rgba(245,184,0,.25);
+}
+
+/* ── Locked prediction tag ── */
+.pred-tag {
+  display: inline-block;
+  padding: .3rem .7rem;
+  border-radius: .4rem;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.pred-tag.pred-L { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
+.pred-tag.pred-E { background: rgba(245,184,0,.12); color: var(--gold); border: 1px solid rgba(245,184,0,.35); }
+.pred-tag.pred-V { background: rgba(96,165,250,.12); color: #60a5fa; border: 1px solid rgba(96,165,250,.35); }
 
 /* ── Empty state ── */
 .empty-state {
@@ -688,8 +788,8 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 
 /* ── Site Footer ── */
 .site-footer {
-  background: linear-gradient(135deg, #060e1c 0%, #0a1628 100%);
-  border-top: 2px solid rgba(245,184,0,.18);
+  background: linear-gradient(135deg, #001F5C 0%, #003087 100%);
+  border-top: 2px solid rgba(254,188,18,.18);
   margin-top: 4rem;
 }
 .footer-inner {
@@ -835,7 +935,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 }
 .match-modal-hero {
   height: 220px;
-  background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 100%);
+  background: linear-gradient(135deg, #001F5C 0%, #003087 100%);
   background-size: cover;
   background-position: center;
   position: relative;
@@ -1213,9 +1313,42 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
   gap: 1.35rem;
 }
-#accordion-grupos .accordion-button::after { filter: invert(1) brightness(1.5); }
-#accordion-grupos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.06) !important; }
-#accordion-grupos .accordion-button:focus { box-shadow: none !important; }
+/* ── Grupo tabs ── */
+.grupo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: .75rem 0 1.25rem;
+}
+.grupo-tab {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  padding: .35rem .75rem;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.05);
+  color: #a0b8d0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.grupo-tab:hover {
+  background: rgba(245,184,0,.12);
+  border-color: rgba(245,184,0,.4);
+  color: var(--gold);
+}
+.grupo-tab.active {
+  background: rgba(245,184,0,.18);
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 2px 10px rgba(245,184,0,.2);
+}
+.grupo-panel-hidden { display: none; }
+.grupo-panels { min-height: 100px; }
 
 /* ── Ranking page — larger avatar override ── */
 .ranking-table .rank-avatar,
@@ -1269,6 +1402,18 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   flex: 1 1 0;
   position: relative;
   overflow: hidden;
+}
+.auth-hero-img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.auth-hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 .auth-split-form {
   flex: 0 0 420px;
@@ -1426,7 +1571,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 
 /* Slide 2 — Host countries */
 .slide-hosts {
-  background: linear-gradient(160deg, #003DA5 0%, #001f6b 60%, #0a1628 100%);
+  background: linear-gradient(160deg, #1A54C5 0%, #003087 60%, #001F5C 100%);
 }
 .slide-hosts::before {
   content: "";
@@ -1471,7 +1616,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 
 /* Slide 3 — Sedes */
 .slide-sedes {
-  background: linear-gradient(160deg, #0a2a0a 0%, #0d1a2e 100%);
+  background: linear-gradient(160deg, #006B80 0%, #003087 100%);
 }
 .slide-sedes::after {
   content: "⚽";
@@ -1510,7 +1655,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
 
 /* Slide 4 — How to play */
 .slide-howto {
-  background: linear-gradient(160deg, #1a0a00 0%, #2a1500 40%, #0a1628 100%);
+  background: linear-gradient(160deg, #002070 0%, #003087 40%, #001F5C 100%);
 }
 .howto-rule {
   display: flex;
@@ -1581,9 +1726,9 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   background: linear-gradient(90deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,.15) 60%, transparent 100%);
 }
 /* fallback gradient backgrounds when no image */
-.hero-carousel-item.h1 { background: linear-gradient(120deg, #000 0%, #1a1200 100%); }
-.hero-carousel-item.h2 { background: linear-gradient(120deg, #003DA5 0%, #001f6b 100%); }
-.hero-carousel-item.h3 { background: linear-gradient(120deg, #0a2a0a 0%, #0d1a2e 100%); }
+.hero-carousel-item.h1 { background: linear-gradient(120deg, #002070 0%, #003087 100%); }
+.hero-carousel-item.h2 { background: linear-gradient(120deg, #1A54C5 0%, #003087 100%); }
+.hero-carousel-item.h3 { background: linear-gradient(120deg, #006B80 0%, #003087 100%); }
 
 .hero-slide-content {
   position: absolute;
@@ -1647,7 +1792,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   top: 0; left: 0;
   width: 270px;
   height: 100%;
-  background: linear-gradient(160deg, #060e1c 0%, #0b2040 100%);
+  background: linear-gradient(160deg, #001F5C 0%, #003087 100%);
   border-right: 1px solid rgba(245,184,0,.2);
   z-index: 1050;
   transform: translateX(-100%);
@@ -1734,7 +1879,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   cursor: pointer;
   transition: all .2s;
 }
-.sidebar-logout-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.sidebar-logout-btn:hover { background: var(--red-dark); color: #fff; border-color: var(--red-dark); }
 
 /* Show hamburger + hide logout-btn on mobile */
 @media (max-width: 575px) {
@@ -1794,8 +1939,7 @@ tr.podium-3 { background: rgba(180,83,9,.07) !important; }
   .campeon-controls .btn-fifa-gold { width: 100%; }
 
   /* Ranking table — hide non-essential columns */
-  .ranking-table .col-exactos,
-  .ranking-table .col-ganador,
+  .ranking-table .col-aciertos,
   .ranking-table .col-campeon { display: none; }
   .ranking-table tbody td { padding: .6rem .65rem; font-size: .85rem; }
   .ranking-table thead th { padding: .6rem .65rem; font-size: .75rem; }

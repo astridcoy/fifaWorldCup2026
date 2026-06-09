@@ -21,16 +21,22 @@ def crear_partido():
                grupo, imagen_estadio, nombre_estadio)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
         """, (
-            datos["equipo_local"], datos["equipo_visita"],
-            datos["fecha"], datos.get("fase", "Grupos"),
-            datos.get("bandera_local", ""), datos.get("bandera_visita", ""),
-            datos.get("grupo", ""), datos.get("imagen_estadio"), datos.get("nombre_estadio", "")
+            datos["equipo_local"],
+            datos["equipo_visita"],
+            datos["fecha"],
+            datos.get("fase", "Grupos"),
+            datos.get("bandera_local", ""),
+            datos.get("bandera_visita", ""),
+            datos.get("grupo", ""),
+            datos.get("imagen_estadio"),
+            datos.get("nombre_estadio", ""),
         ))
         pid = cur.fetchone()["id"]
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Partido creado", "id": pid}), 201
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -57,11 +63,15 @@ def editar_partido(partido_id):
     try:
         conn = get_db()
         cur  = conn.cursor()
-        sets = ("equipo_local=%s, equipo_visita=%s, bandera_local=%s, bandera_visita=%s,"
-                "fecha=%s, fase=%s, grupo=%s, finalizado=%s, goles_local=%s, goles_visita=%s,"
-                "nombre_estadio=%s")
-        values = [equipo_local, equipo_visita, bandera_local, bandera_visita,
-                  fecha, fase, grupo, finalizado, goles_local, goles_visita, nombre_estadio]
+        sets = (
+            "equipo_local=%s, equipo_visita=%s, bandera_local=%s, bandera_visita=%s,"
+            "fecha=%s, fase=%s, grupo=%s, finalizado=%s, goles_local=%s, goles_visita=%s,"
+            "nombre_estadio=%s"
+        )
+        values = [
+            equipo_local, equipo_visita, bandera_local, bandera_visita,
+            fecha, fase, grupo, finalizado, goles_local, goles_visita, nombre_estadio,
+        ]
         if tiene_imagen:
             sets  += ", imagen_estadio=%s"
             values.append(datos["imagen_estadio"])
@@ -71,18 +81,21 @@ def editar_partido(partido_id):
             return jsonify({"error": "Partido no encontrado"}), 404
 
         if finalizado:
-            cur.execute("SELECT * FROM apuestas WHERE id_partido = %s", (partido_id,))
-            ganador_real = "local" if goles_local > goles_visita else ("visita" if goles_visita > goles_local else "empate")
+            cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
+            real = (
+                "L" if goles_local > goles_visita else
+                "V" if goles_visita > goles_local else
+                "E"
+            )
             for ap in cur.fetchall():
-                gl_ap, gv_ap = ap["goles_local_apostado"], ap["goles_visita_apostado"]
-                ganador_ap = "local" if gl_ap > gv_ap else ("visita" if gv_ap > gl_ap else "empate")
-                pts = 3 if (gl_ap == goles_local and gv_ap == goles_visita) else (1 if ganador_ap == ganador_real else 0)
+                pts = 1 if ap["prediccion"] == real else 0
                 cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
 
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Partido actualizado correctamente"})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -96,9 +109,10 @@ def eliminar_partido(partido_id):
         if cur.rowcount == 0:
             return jsonify({"error": "Partido no encontrado"}), 404
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Partido eliminado correctamente"})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -111,24 +125,27 @@ def ingresar_resultado(partido_id):
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("""
-            UPDATE partidos SET goles_local=%s, goles_visita=%s, finalizado=TRUE WHERE id=%s
-        """, (goles_local, goles_visita, partido_id))
-        cur.execute("SELECT * FROM apuestas WHERE id_partido = %s", (partido_id,))
-        ganador_real = "local" if goles_local > goles_visita else ("visita" if goles_visita > goles_local else "empate")
+        cur.execute(
+            "UPDATE partidos SET goles_local=%s, goles_visita=%s, finalizado=TRUE WHERE id=%s",
+            (goles_local, goles_visita, partido_id)
+        )
+        cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
+        real = (
+            "L" if goles_local > goles_visita else
+            "V" if goles_visita > goles_local else
+            "E"
+        )
         for ap in cur.fetchall():
-            gl_ap, gv_ap = ap["goles_local_apostado"], ap["goles_visita_apostado"]
-            ganador_ap = "local" if gl_ap > gv_ap else ("visita" if gv_ap > gl_ap else "empate")
-            pts = 3 if (gl_ap == goles_local and gv_ap == goles_visita) else (1 if ganador_ap == ganador_real else 0)
+            pts = 1 if ap["prediccion"] == real else 0
             cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
         conn.commit()
-        cur.close(); conn.close()
-        # Notificar a apostadores en background (no bloquea la respuesta)
+        cur.close()
+        conn.close()
         threading.Thread(
             target=_notificar_resultado, args=(partido_id,), daemon=True
         ).start()
         return jsonify({"mensaje": "Resultado ingresado y puntos calculados"})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -150,12 +167,19 @@ def definir_campeon_real():
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("UPDATE apuesta_campeon SET puntos_campeon=5 WHERE LOWER(campeon)=LOWER(%s)", (campeon_real,))
-        cur.execute("UPDATE apuesta_campeon SET puntos_campeon=0 WHERE LOWER(campeon)!=LOWER(%s)", (campeon_real,))
+        cur.execute(
+            "UPDATE apuesta_campeon SET puntos_campeon=5 WHERE LOWER(campeon)=LOWER(%s)",
+            (campeon_real,)
+        )
+        cur.execute(
+            "UPDATE apuesta_campeon SET puntos_campeon=0 WHERE LOWER(campeon)!=LOWER(%s)",
+            (campeon_real,)
+        )
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": f"Campeón {campeon_real} registrado. Puntos asignados."})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -165,11 +189,14 @@ def listar_usuarios():
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("SELECT id, nombre, email, rol, foto_perfil FROM usuarios ORDER BY id ASC")
+        cur.execute(
+            "SELECT id, nombre, email, rol, foto_perfil FROM usuarios ORDER BY id ASC"
+        )
         usuarios = cur.fetchall()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify([dict(u) for u in usuarios])
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -195,11 +222,12 @@ def crear_usuario():
         )
         uid = cur.fetchone()["id"]
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Usuario creado correctamente", "id": uid}), 201
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": "El email ya está registrado"}), 409
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -229,11 +257,12 @@ def editar_usuario(uid):
         if cur.rowcount == 0:
             return jsonify({"error": "Usuario no encontrado"}), 404
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Usuario actualizado correctamente"})
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": "El email ya está en uso por otro usuario"}), 409
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -246,18 +275,21 @@ def eliminar_usuario(uid):
         cur.execute("SELECT rol FROM usuarios WHERE id = %s", (uid,))
         usuario = cur.fetchone()
         if not usuario:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return jsonify({"error": "Usuario no encontrado"}), 404
         if usuario["rol"] == "admin":
             cur.execute("SELECT COUNT(*) AS cnt FROM usuarios WHERE rol='admin'")
             if cur.fetchone()["cnt"] <= 1:
-                cur.close(); conn.close()
+                cur.close()
+                conn.close()
                 return jsonify({"error": "No puedes eliminar el único administrador"}), 400
         cur.execute("DELETE FROM usuarios WHERE id = %s", (uid,))
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Usuario eliminado correctamente"})
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
@@ -275,15 +307,46 @@ def ver_apuestas():
                    p.fecha, p.fase, p.grupo,
                    p.goles_local AS resultado_local, p.goles_visita AS resultado_visita,
                    p.finalizado,
-                   a.goles_local_apostado, a.goles_visita_apostado,
-                   a.puntos, a.intentos
+                   a.prediccion, a.puntos, a.intentos
             FROM apuestas a
             JOIN usuarios u ON u.id = a.id_usuario
             JOIN partidos p ON p.id = a.id_partido
             ORDER BY u.nombre ASC, p.fecha ASC
         """)
         rows = cur.fetchall()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify([dict(r) for r in rows])
-    except Exception as e:
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/apuestas/reset", methods=["DELETE"])
+@solo_admin
+def reset_apuestas():
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM apuestas")
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Historial de apuestas eliminado correctamente"})
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/ranking/reset", methods=["DELETE"])
+@solo_admin
+def reset_ranking():
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM apuestas")
+        cur.execute("DELETE FROM apuesta_campeon")
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Ranking reseteado correctamente"})
+    except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500

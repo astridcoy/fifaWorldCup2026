@@ -1,9 +1,11 @@
+import os
 import re
 import hmac
 import hashlib
 import logging
 import bcrypt
 import jwt
+import psycopg2
 import secrets
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
@@ -11,12 +13,21 @@ from database import get_db
 from auth import send_reset_email
 from config import SECRET_KEY, SMTP_HOST, SMTP_USER
 
+try:
+    from google.oauth2 import id_token as _g_id_token
+    from google.auth.transport import requests as _g_requests
+    _GOOGLE_AUTH_OK = True
+except ImportError:
+    _GOOGLE_AUTH_OK = False
+
+
 auth_bp = Blueprint("auth", __name__)
 
-# ── Validación de email ──────────────────────────────────────────
+
+# ── Validadores ──────────────────────────────────────────────────
+
 _EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
-# Dominios de correo desechables/temporales conocidos
 _DISPOSABLE = frozenset([
     "mailinator.com", "guerrillamail.com", "guerrillamail.info",
     "guerrillamail.biz", "guerrillamail.de", "guerrillamail.net",
@@ -56,27 +67,104 @@ _DISPOSABLE = frozenset([
     "mailzilla.org", "getonemail.com", "gettempmail.com",
 ])
 
+_PW_RE = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
+
+_DUMMY_HASH = bcrypt.hashpw(b"__timing_safe_dummy__", bcrypt.gensalt())
+
 
 def _email_valido(email):
-    """Retorna (True, "") o (False, mensaje_error)."""
     if not _EMAIL_RE.match(email):
         return False, "Formato de correo inválido"
     domain = email.split("@", 1)[1].lower()
     if domain in _DISPOSABLE:
-        return False, ("No se aceptan correos temporales o desechables. "
-                       "Usa tu correo de Gmail, Hotmail, Outlook u otro proveedor válido.")
+        return False, (
+            "No se aceptan correos temporales o desechables. "
+            "Usa tu correo de Gmail, Hotmail, Outlook u otro proveedor válido."
+        )
     return True, ""
 
-
-_PW_RE = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
 
 def _password_valido(pw):
     return bool(_PW_RE.match(pw)) if pw else False
 
+
 def _hmac_token(token):
     return hmac.new(SECRET_KEY.encode(), token.encode(), digestmod=hashlib.sha256).hexdigest()
 
-_DUMMY_HASH = bcrypt.hashpw(b"__timing_safe_dummy__", bcrypt.gensalt())
+
+# ── Rutas ────────────────────────────────────────────────────────
+
+@auth_bp.route("/auth/google", methods=["POST"])
+def google_login():
+    if not _GOOGLE_AUTH_OK:
+        return jsonify({"error": "Google auth no disponible en el servidor"}), 503
+
+    data  = request.get_json(silent=True) or {}
+    token = data.get("token", "").strip()
+    if not token:
+        return jsonify({"error": "Token requerido"}), 400
+
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+    if not client_id:
+        return jsonify({"error": "Google login no configurado en el servidor"}), 503
+
+    try:
+        idinfo = _g_id_token.verify_oauth2_token(token, _g_requests.Request(), client_id)
+    except ValueError:
+        return jsonify({"error": "Token de Google inválido o expirado"}), 401
+    except Exception:
+        logging.exception("Error verificando token Google")
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+    email   = (idinfo.get("email") or "").lower().strip()
+    nombre  = (idinfo.get("name")  or "").strip() or email.split("@")[0]
+    picture = idinfo.get("picture") or None
+
+    if not email:
+        return jsonify({"error": "No se pudo obtener el email de Google"}), 400
+
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute(
+            "SELECT id, nombre, rol, foto_perfil FROM usuarios WHERE email = %s",
+            (email,)
+        )
+        usuario = cur.fetchone()
+
+        if usuario:
+            uid = usuario["id"]
+            rol = usuario["rol"]
+            nom = usuario["nombre"]
+            if picture and not usuario["foto_perfil"]:
+                cur.execute("UPDATE usuarios SET foto_perfil = %s WHERE id = %s", (picture, uid))
+                conn.commit()
+        else:
+            pw_hash = bcrypt.hashpw(secrets.token_bytes(32), bcrypt.gensalt()).decode()
+            cur.execute(
+                "INSERT INTO usuarios (nombre, email, password, rol, foto_perfil)"
+                " VALUES (%s, %s, %s, 'usuario', %s) RETURNING id",
+                (nombre[:80], email, pw_hash, picture)
+            )
+            uid = cur.fetchone()["id"]
+            rol = "usuario"
+            nom = nombre[:80]
+            conn.commit()
+
+        cur.close()
+        conn.close()
+
+        jwt_tok = jwt.encode(
+            {"id": uid, "nombre": nom, "rol": rol,
+             "exp": datetime.utcnow() + timedelta(hours=24)},
+            SECRET_KEY,
+            algorithm="HS256"
+        )
+        return jsonify({"token": jwt_tok, "nombre": nom, "rol": rol, "id": uid})
+
+    except Exception:
+        logging.exception("Error en /auth/google")
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 @auth_bp.route("/registro", methods=["POST"])
@@ -95,7 +183,10 @@ def registro():
     if len(nombre) < 2 or len(nombre) > 80:
         return jsonify({"error": "El nombre debe tener entre 2 y 80 caracteres"}), 400
     if not _password_valido(password):
-        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"}), 400
+        return jsonify({"error": (
+            "La contraseña debe tener al menos 8 caracteres, "
+            "una mayúscula, una minúscula y un número"
+        )}), 400
 
     hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     try:
@@ -107,12 +198,12 @@ def registro():
         )
         uid = cur.fetchone()["id"]
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Usuario registrado correctamente", "id": uid}), 201
-    except Exception as e:
-        import psycopg2
-        if isinstance(e, psycopg2.errors.UniqueViolation):
-            return jsonify({"error": "El email ya está registrado"}), 409
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"error": "El email ya está registrado"}), 409
+    except Exception:
         logging.exception("Error en /registro")
         return jsonify({"error": "Error interno del servidor"}), 500
 
@@ -127,7 +218,8 @@ def login():
         cur  = conn.cursor()
         cur.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
         usuario = cur.fetchone()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
 
         stored = usuario["password"].encode() if usuario else _DUMMY_HASH
         if not usuario or not bcrypt.checkpw(password.encode(), stored):
@@ -136,11 +228,16 @@ def login():
         token = jwt.encode(
             {"id": usuario["id"], "nombre": usuario["nombre"], "rol": usuario["rol"],
              "exp": datetime.utcnow() + timedelta(hours=24)},
-            SECRET_KEY, algorithm="HS256"
+            SECRET_KEY,
+            algorithm="HS256"
         )
-        return jsonify({"token": token, "nombre": usuario["nombre"],
-                        "rol": usuario["rol"], "id": usuario["id"]})
-    except Exception as e:
+        return jsonify({
+            "token":  token,
+            "nombre": usuario["nombre"],
+            "rol":    usuario["rol"],
+            "id":     usuario["id"],
+        })
+    except Exception:
         logging.exception("Error en /login")
         return jsonify({"error": "Error interno del servidor"}), 500
 
@@ -168,9 +265,10 @@ def recuperar_password():
             )
             conn.commit()
             send_reset_email(email, token)
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Si el correo está registrado, recibirás un enlace en breve."}), 200
-    except Exception as e:
+    except Exception:
         logging.exception("Error en /recuperar-password")
         return jsonify({"error": "Error interno del servidor"}), 500
 
@@ -183,26 +281,36 @@ def reset_password():
     if not token or not password:
         return jsonify({"error": "Token y contraseña son obligatorios"}), 400
     if not _password_valido(password):
-        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"}), 400
+        return jsonify({"error": (
+            "La contraseña debe tener al menos 8 caracteres, "
+            "una mayúscula, una minúscula y un número"
+        )}), 400
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute("SELECT id, reset_token_expiry FROM usuarios WHERE reset_token = %s", (_hmac_token(token),))
+        cur.execute(
+            "SELECT id, reset_token_expiry FROM usuarios WHERE reset_token = %s",
+            (_hmac_token(token),)
+        )
         usuario = cur.fetchone()
         if not usuario:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return jsonify({"error": "El enlace es inválido o ya fue usado"}), 400
         if datetime.utcnow() > usuario["reset_token_expiry"]:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return jsonify({"error": "El enlace ha expirado. Solicita uno nuevo."}), 400
         hash_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         cur.execute(
-            "UPDATE usuarios SET password = %s, reset_token = NULL, reset_token_expiry = NULL WHERE id = %s",
+            "UPDATE usuarios SET password = %s, reset_token = NULL, reset_token_expiry = NULL"
+            " WHERE id = %s",
             (hash_pw, usuario["id"])
         )
         conn.commit()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
         return jsonify({"mensaje": "Contraseña actualizada correctamente"})
-    except Exception as e:
+    except Exception:
         logging.exception("Error en /reset-password")
         return jsonify({"error": "Error interno del servidor"}), 500
