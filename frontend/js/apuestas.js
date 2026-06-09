@@ -1,29 +1,4 @@
-const EQUIPOS = [
-  // Grupo A
-  "🇲🇽 México","🇿🇦 Sudáfrica","🇰🇷 Corea del Sur","🇨🇿 Rep. Checa",
-  // Grupo B
-  "🇨🇦 Canadá","🇧🇦 Bosnia-Herzegovina","🇶🇦 Qatar","🇨🇭 Suiza",
-  // Grupo C
-  "🇧🇷 Brasil","🇲🇦 Marruecos","🇭🇹 Haití","🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia",
-  // Grupo D
-  "🇺🇸 Estados Unidos","🇵🇾 Paraguay","🇦🇺 Australia","🇹🇷 Turquía",
-  // Grupo E
-  "🇩🇪 Alemania","🇨🇼 Curazao","🇨🇮 Costa de Marfil","🇪🇨 Ecuador",
-  // Grupo F
-  "🇳🇱 Países Bajos","🇯🇵 Japón","🇸🇪 Suecia","🇹🇳 Túnez",
-  // Grupo G
-  "🇧🇪 Bélgica","🇪🇬 Egipto","🇮🇷 Irán","🇳🇿 Nueva Zelanda",
-  // Grupo H
-  "🇪🇸 España","🇨🇻 Cabo Verde","🇸🇦 Arabia Saudita","🇺🇾 Uruguay",
-  // Grupo I
-  "🇫🇷 Francia","🇸🇳 Senegal","🇮🇶 Irak","🇳🇴 Noruega",
-  // Grupo J
-  "🇦🇷 Argentina","🇩🇿 Argelia","🇦🇹 Austria","🇯🇴 Jordania",
-  // Grupo K
-  "🇵🇹 Portugal","🇨🇩 RD Congo","🇺🇿 Uzbekistán","🇨🇴 Colombia",
-  // Grupo L
-  "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra","🇭🇷 Croacia","🇬🇭 Ghana","🇵🇦 Panamá"
-];
+// EQUIPOS, STADIUM_DB, TEAM_DB defined in data.js
 
 const selCampeon = document.getElementById("sel-campeon");
 EQUIPOS.forEach(eq => {
@@ -40,7 +15,7 @@ function formatFecha(fechaStr) {
 }
 
 function estaAbierto(partido) {
-  const deadline = new Date(partido.fecha).getTime() - 1 * 60 * 60 * 1000;
+  const deadline = new Date(partido.fecha).getTime() - BET_CLOSE_HOURS * 60 * 60 * 1000;
   return !partido.finalizado && Date.now() < deadline;
 }
 
@@ -306,148 +281,6 @@ function _staggerCards(container) {
   });
 }
 
-// ── Lookup tables ──────────────────────────────────────────────
-const STADIUM_DB = {
-  "azteca":       {city:"Ciudad de México",    country:"🇲🇽 México",  capacity:"87,523", maps:"https://maps.google.com/?q=Estadio+Azteca+Mexico+City"},
-  "mexico city":  {city:"Ciudad de México",    country:"🇲🇽 México",  capacity:"87,523", maps:"https://maps.google.com/?q=Estadio+Azteca+Mexico+City"},
-  "guadalajara":  {city:"Guadalajara, Jalisco",country:"🇲🇽 México",  capacity:"49,850", maps:"https://maps.google.com/?q=Estadio+Akron+Guadalajara"},
-  "akron":        {city:"Guadalajara, Jalisco",country:"🇲🇽 México",  capacity:"49,850", maps:"https://maps.google.com/?q=Estadio+Akron+Guadalajara"},
-  "bbva":         {city:"Monterrey, N.L.",     country:"🇲🇽 México",  capacity:"51,350", maps:"https://maps.google.com/?q=Estadio+BBVA+Monterrey"},
-  "monterrey":    {city:"Monterrey, N.L.",     country:"🇲🇽 México",  capacity:"51,350", maps:"https://maps.google.com/?q=Estadio+BBVA+Monterrey"},
-  "bmo":          {city:"Toronto, Ontario",    country:"🇨🇦 Canadá",  capacity:"45,736", maps:"https://maps.google.com/?q=BMO+Field+Toronto"},
-  "toronto":      {city:"Toronto, Ontario",    country:"🇨🇦 Canadá",  capacity:"45,736", maps:"https://maps.google.com/?q=BMO+Field+Toronto"},
-  "bc place":     {city:"Vancouver, BC",       country:"🇨🇦 Canadá",  capacity:"54,500", maps:"https://maps.google.com/?q=BC+Place+Vancouver"},
-  "vancouver":    {city:"Vancouver, BC",       country:"🇨🇦 Canadá",  capacity:"54,500", maps:"https://maps.google.com/?q=BC+Place+Vancouver"},
-  "metlife":      {city:"East Rutherford, NJ", country:"🇺🇸 EE.UU.", capacity:"82,500", maps:"https://maps.google.com/?q=MetLife+Stadium+East+Rutherford"},
-  "new york":     {city:"East Rutherford, NJ", country:"🇺🇸 EE.UU.", capacity:"82,500", maps:"https://maps.google.com/?q=MetLife+Stadium+East+Rutherford"},
-  "at&t":         {city:"Arlington, TX",       country:"🇺🇸 EE.UU.", capacity:"80,000", maps:"https://maps.google.com/?q=AT%26T+Stadium+Arlington+Texas"},
-  "arlington":    {city:"Arlington, TX",       country:"🇺🇸 EE.UU.", capacity:"80,000", maps:"https://maps.google.com/?q=AT%26T+Stadium+Arlington+Texas"},
-  "dallas":       {city:"Arlington, TX",       country:"🇺🇸 EE.UU.", capacity:"80,000", maps:"https://maps.google.com/?q=AT%26T+Stadium+Arlington+Texas"},
-  "sofi":         {city:"Inglewood, CA",       country:"🇺🇸 EE.UU.", capacity:"70,240", maps:"https://maps.google.com/?q=SoFi+Stadium+Inglewood"},
-  "angeles":      {city:"Inglewood, CA",       country:"🇺🇸 EE.UU.", capacity:"70,240", maps:"https://maps.google.com/?q=SoFi+Stadium+Inglewood"},
-  "levi":         {city:"Santa Clara, CA",     country:"🇺🇸 EE.UU.", capacity:"68,500", maps:"https://maps.google.com/?q=Levi%27s+Stadium+Santa+Clara"},
-  "santa clara":  {city:"Santa Clara, CA",     country:"🇺🇸 EE.UU.", capacity:"68,500", maps:"https://maps.google.com/?q=Levi%27s+Stadium+Santa+Clara"},
-  "arrowhead":    {city:"Kansas City, MO",     country:"🇺🇸 EE.UU.", capacity:"76,416", maps:"https://maps.google.com/?q=Arrowhead+Stadium+Kansas+City"},
-  "kansas":       {city:"Kansas City, MO",     country:"🇺🇸 EE.UU.", capacity:"76,416", maps:"https://maps.google.com/?q=Arrowhead+Stadium+Kansas+City"},
-  "lincoln":      {city:"Philadelphia, PA",    country:"🇺🇸 EE.UU.", capacity:"69,796", maps:"https://maps.google.com/?q=Lincoln+Financial+Field+Philadelphia"},
-  "philadelphia": {city:"Philadelphia, PA",    country:"🇺🇸 EE.UU.", capacity:"69,796", maps:"https://maps.google.com/?q=Lincoln+Financial+Field+Philadelphia"},
-  "hard rock":    {city:"Miami Gardens, FL",   country:"🇺🇸 EE.UU.", capacity:"65,326", maps:"https://maps.google.com/?q=Hard+Rock+Stadium+Miami"},
-  "miami":        {city:"Miami Gardens, FL",   country:"🇺🇸 EE.UU.", capacity:"65,326", maps:"https://maps.google.com/?q=Hard+Rock+Stadium+Miami"},
-  "gillette":     {city:"Foxborough, MA",      country:"🇺🇸 EE.UU.", capacity:"65,878", maps:"https://maps.google.com/?q=Gillette+Stadium+Foxborough"},
-  "boston":       {city:"Foxborough, MA",      country:"🇺🇸 EE.UU.", capacity:"65,878", maps:"https://maps.google.com/?q=Gillette+Stadium+Foxborough"},
-  "empower":      {city:"Denver, CO",          country:"🇺🇸 EE.UU.", capacity:"76,125", maps:"https://maps.google.com/?q=Empower+Field+Denver"},
-  "denver":       {city:"Denver, CO",          country:"🇺🇸 EE.UU.", capacity:"76,125", maps:"https://maps.google.com/?q=Empower+Field+Denver"},
-  "lumen":        {city:"Seattle, WA",         country:"🇺🇸 EE.UU.", capacity:"68,740", maps:"https://maps.google.com/?q=Lumen+Field+Seattle"},
-  "seattle":      {city:"Seattle, WA",         country:"🇺🇸 EE.UU.", capacity:"68,740", maps:"https://maps.google.com/?q=Lumen+Field+Seattle"},
-  "nrg":          {city:"Houston, TX",         country:"🇺🇸 EE.UU.", capacity:"72,220", maps:"https://maps.google.com/?q=NRG+Stadium+Houston"},
-  "houston":      {city:"Houston, TX",         country:"🇺🇸 EE.UU.", capacity:"72,220", maps:"https://maps.google.com/?q=NRG+Stadium+Houston"},
-  "mercedes":     {city:"Atlanta, GA",         country:"🇺🇸 EE.UU.", capacity:"71,000", maps:"https://maps.google.com/?q=Mercedes-Benz+Stadium+Atlanta"},
-  "atlanta":      {city:"Atlanta, GA",         country:"🇺🇸 EE.UU.", capacity:"71,000", maps:"https://maps.google.com/?q=Mercedes-Benz+Stadium+Atlanta"},
-};
-
-const TEAM_DB = {
-  "argentina":            {conf:"CONMEBOL",titles:3,best:"Campeón 1978, 1986, 2022",       nickname:"La Albiceleste",         confColor:"#4fc3f7", website:"https://www.afa.com.ar"},
-  "brasil":               {conf:"CONMEBOL",titles:5,best:"Campeón 1958, 62, 70, 94, 2002", nickname:"A Seleção / La Canarinha",confColor:"#4fc3f7", website:"https://www.cbf.com.br"},
-  "brazil":               {conf:"CONMEBOL",titles:5,best:"Campeón 1958, 62, 70, 94, 2002", nickname:"La Canarinha",           confColor:"#4fc3f7", website:"https://www.cbf.com.br"},
-  "francia":              {conf:"UEFA",    titles:2,best:"Campeón 1998, 2018",              nickname:"Les Bleus",              confColor:"#7fb3f5", website:"https://www.fff.fr"},
-  "france":               {conf:"UEFA",    titles:2,best:"Campeón 1998, 2018",              nickname:"Les Bleus",              confColor:"#7fb3f5", website:"https://www.fff.fr"},
-  "españa":               {conf:"UEFA",    titles:1,best:"Campeón 2010",                    nickname:"La Roja",                confColor:"#7fb3f5", website:"https://www.rfef.es"},
-  "spain":                {conf:"UEFA",    titles:1,best:"Campeón 2010",                    nickname:"La Roja",                confColor:"#7fb3f5", website:"https://www.rfef.es"},
-  "alemania":             {conf:"UEFA",    titles:4,best:"Campeón 1954, 74, 90, 2014",      nickname:"Die Mannschaft",         confColor:"#7fb3f5", website:"https://www.dfb.de"},
-  "germany":              {conf:"UEFA",    titles:4,best:"Campeón 1954, 74, 90, 2014",      nickname:"Die Mannschaft",         confColor:"#7fb3f5", website:"https://www.dfb.de"},
-  "portugal":             {conf:"UEFA",    titles:0,best:"3er lugar 1966",                  nickname:"A Seleção das Quinas",   confColor:"#7fb3f5", website:"https://www.fpf.pt"},
-  "inglaterra":           {conf:"UEFA",    titles:1,best:"Campeón 1966",                    nickname:"The Three Lions",        confColor:"#7fb3f5", website:"https://www.thefa.com"},
-  "england":              {conf:"UEFA",    titles:1,best:"Campeón 1966",                    nickname:"The Three Lions",        confColor:"#7fb3f5", website:"https://www.thefa.com"},
-  "países bajos":         {conf:"UEFA",    titles:0,best:"Finalista 1974, 1978, 2010",      nickname:"La Naranja Mecánica",    confColor:"#7fb3f5", website:"https://www.knvb.nl"},
-  "netherlands":          {conf:"UEFA",    titles:0,best:"Finalista 1974, 1978, 2010",      nickname:"La Naranja Mecánica",    confColor:"#7fb3f5", website:"https://www.knvb.nl"},
-  "bélgica":              {conf:"UEFA",    titles:0,best:"3er lugar 2018",                  nickname:"Los Diablos Rojos",      confColor:"#7fb3f5", website:"https://www.rbfa.be"},
-  "belgium":              {conf:"UEFA",    titles:0,best:"3er lugar 2018",                  nickname:"Los Diablos Rojos",      confColor:"#7fb3f5", website:"https://www.rbfa.be"},
-  "uruguay":              {conf:"CONMEBOL",titles:2,best:"Campeón 1930, 1950",              nickname:"La Celeste",             confColor:"#4fc3f7", website:"https://www.auf.org.uy"},
-  "méxico":               {conf:"CONCACAF",titles:0,best:"Cuartos de final 1970, 1986",     nickname:"El Tri",                 confColor:"#4ade80", website:"https://www.miseleccion.mx"},
-  "mexico":               {conf:"CONCACAF",titles:0,best:"Cuartos de final 1970, 1986",     nickname:"El Tri",                 confColor:"#4ade80", website:"https://www.miseleccion.mx"},
-  "estados unidos":       {conf:"CONCACAF",titles:0,best:"3er lugar 1930",                  nickname:"The Stars & Stripes",    confColor:"#4ade80", website:"https://www.ussoccer.com"},
-  "united states":        {conf:"CONCACAF",titles:0,best:"3er lugar 1930",                  nickname:"The Stars & Stripes",    confColor:"#4ade80", website:"https://www.ussoccer.com"},
-  "canadá":               {conf:"CONCACAF",titles:0,best:"Fase de grupos 1986",             nickname:"The Canucks",            confColor:"#4ade80", website:"https://www.canadasoccer.com"},
-  "canada":               {conf:"CONCACAF",titles:0,best:"Fase de grupos 1986",             nickname:"The Canucks",            confColor:"#4ade80", website:"https://www.canadasoccer.com"},
-  "japón":                {conf:"AFC",     titles:0,best:"Octavos de final 2002, 10, 22",   nickname:"Los Samurais Azules",    confColor:"#f87171", website:"https://www.jfa.jp"},
-  "japan":                {conf:"AFC",     titles:0,best:"Octavos de final 2002, 10, 22",   nickname:"Los Samurais Azules",    confColor:"#f87171", website:"https://www.jfa.jp"},
-  "corea del sur":        {conf:"AFC",     titles:0,best:"4to lugar 2002",                  nickname:"Los Guerreros Taeguk",   confColor:"#f87171", website:"https://www.kfa.or.kr"},
-  "south korea":          {conf:"AFC",     titles:0,best:"4to lugar 2002",                  nickname:"Los Guerreros Taeguk",   confColor:"#f87171", website:"https://www.kfa.or.kr"},
-  "marruecos":            {conf:"CAF",     titles:0,best:"4to lugar 2022",                  nickname:"Los Leones del Atlas",   confColor:"#fbbf24", website:"https://www.frmf.ma"},
-  "morocco":              {conf:"CAF",     titles:0,best:"4to lugar 2022",                  nickname:"Los Leones del Atlas",   confColor:"#fbbf24", website:"https://www.frmf.ma"},
-  "senegal":              {conf:"CAF",     titles:0,best:"Cuartos de final 2002",           nickname:"Los Leones de Teranga",  confColor:"#fbbf24", website:"https://www.fsf.sn"},
-  "colombia":             {conf:"CONMEBOL",titles:0,best:"Cuartos de final 2014",           nickname:"Los Cafeteros",          confColor:"#4fc3f7", website:"https://fcf.com.co"},
-  "chile":                {conf:"CONMEBOL",titles:0,best:"3er lugar 1962",                  nickname:"La Roja",                confColor:"#4fc3f7", website:"https://www.anfp.cl"},
-  "costa rica":           {conf:"CONCACAF",titles:0,best:"Cuartos de final 2014",           nickname:"Los Ticos",              confColor:"#4ade80", website:"https://www.fedefutbol.com"},
-  "polonia":              {conf:"UEFA",    titles:0,best:"3er lugar 1974, 1982",            nickname:"Los Águilas Blancas",    confColor:"#7fb3f5", website:"https://www.pzpn.pl"},
-  "poland":               {conf:"UEFA",    titles:0,best:"3er lugar 1974, 1982",            nickname:"Los Águilas Blancas",    confColor:"#7fb3f5", website:"https://www.pzpn.pl"},
-  "serbia":               {conf:"UEFA",    titles:0,best:"Finalista (Yugoslavia) 1954",     nickname:"Las Águilas",            confColor:"#7fb3f5", website:"https://www.fss.rs"},
-  "australia":            {conf:"AFC",     titles:0,best:"Cuartos de final 2022",           nickname:"Los Socceroos",          confColor:"#f87171", website:"https://www.footballaustralia.com.au"},
-  "ghana":                {conf:"CAF",     titles:0,best:"Cuartos de final 2010",           nickname:"Las Estrellas Negras",   confColor:"#fbbf24", website:"https://gfa.com.gh"},
-  "arabia saudita":       {conf:"AFC",     titles:0,best:"Octavos de final 1994",           nickname:"Las Águilas Verdes",     confColor:"#f87171", website:"https://www.saff.com.sa"},
-  "saudi arabia":         {conf:"AFC",     titles:0,best:"Octavos de final 1994",           nickname:"Las Águilas Verdes",     confColor:"#f87171", website:"https://www.saff.com.sa"},
-  "sudáfrica":            {conf:"CAF",     titles:0,best:"Fase de grupos (local) 2010",     nickname:"Bafana Bafana",          confColor:"#fbbf24", website:"https://www.safa.net"},
-  "south africa":         {conf:"CAF",     titles:0,best:"Fase de grupos (local) 2010",     nickname:"Bafana Bafana",          confColor:"#fbbf24", website:"https://www.safa.net"},
-  "czech republic":       {conf:"UEFA",    titles:0,best:"Finalista (Checoslov.) 1934",     nickname:"Los Leones",             confColor:"#7fb3f5", website:"https://www.fotbal.cz"},
-  "república checa":      {conf:"UEFA",    titles:0,best:"Finalista (Checoslov.) 1934",     nickname:"Los Leones",             confColor:"#7fb3f5", website:"https://www.fotbal.cz"},
-  "bosnia":               {conf:"UEFA",    titles:0,best:"Fase de grupos 2014",             nickname:"Los Zmajevi (Dragones)", confColor:"#7fb3f5", website:"https://www.nfsbih.ba"},
-  "bosnia & herzegovina": {conf:"UEFA",    titles:0,best:"Fase de grupos 2014",             nickname:"Los Zmajevi (Dragones)", confColor:"#7fb3f5", website:"https://www.nfsbih.ba"},
-  "croacia":              {conf:"UEFA",    titles:0,best:"3er lugar 1998, 2022",            nickname:"Los Vatreni (Llamas)",   confColor:"#7fb3f5", website:"https://www.hns-cff.hr"},
-  "croatia":              {conf:"UEFA",    titles:0,best:"3er lugar 1998, 2022",            nickname:"Los Vatreni (Llamas)",   confColor:"#7fb3f5", website:"https://www.hns-cff.hr"},
-  "nigeria":              {conf:"CAF",     titles:0,best:"Octavos de final 1994, 1998",     nickname:"Las Súper Águilas",      confColor:"#fbbf24", website:"https://thenff.com"},
-  "ecuador":              {conf:"CONMEBOL",titles:0,best:"Octavos de final 2006",           nickname:"La Tricolor",            confColor:"#4fc3f7", website:"https://www.fef.ec"},
-  "perú":                 {conf:"CONMEBOL",titles:0,best:"Cuartos de final 1970",           nickname:"La Blanquirroja",        confColor:"#4fc3f7", website:"https://www.fpf.com.pe"},
-  "venezuela":            {conf:"CONMEBOL",titles:0,best:"Debutante en 2026",               nickname:"La Vinotinto",           confColor:"#4fc3f7", website:"https://www.federacionvenezolanadefutbol.org"},
-  "suiza":                {conf:"UEFA",    titles:0,best:"Cuartos de final 1934, 38, 54",   nickname:"La Nati",                confColor:"#7fb3f5", website:"https://www.sfl.ch"},
-  "switzerland":          {conf:"UEFA",    titles:0,best:"Cuartos de final 1934, 38, 54",   nickname:"La Nati",                confColor:"#7fb3f5", website:"https://www.sfl.ch"},
-  "dinamarca":            {conf:"UEFA",    titles:0,best:"Cuartos de final 1998",           nickname:"Los Dinamitas",          confColor:"#7fb3f5", website:"https://www.dbu.dk"},
-  "denmark":              {conf:"UEFA",    titles:0,best:"Cuartos de final 1998",           nickname:"Los Dinamitas",          confColor:"#7fb3f5", website:"https://www.dbu.dk"},
-  "turquía":              {conf:"UEFA",    titles:0,best:"3er lugar 2002",                  nickname:"La Media Luna",          confColor:"#7fb3f5", website:"https://www.tff.org"},
-  "turkey":               {conf:"UEFA",    titles:0,best:"3er lugar 2002",                  nickname:"La Media Luna",          confColor:"#7fb3f5", website:"https://www.tff.org"},
-  "ucrania":              {conf:"UEFA",    titles:0,best:"Cuartos de final 2006",           nickname:"La Zbirna",              confColor:"#7fb3f5", website:"https://uaf.ua"},
-  "ukraine":              {conf:"UEFA",    titles:0,best:"Cuartos de final 2006",           nickname:"La Zbirna",              confColor:"#7fb3f5", website:"https://uaf.ua"},
-  // ── Nuevos equipos WC 2026 ──────────────────────────────────────────────
-  "qatar":                {conf:"AFC",     titles:0,best:"Fase de grupos 2022 (local)",     nickname:"Los Maroon",             confColor:"#f87171", website:"https://www.qfa.qa"},
-  "haití":                {conf:"CONCACAF",titles:0,best:"Cuartos de final 1974",           nickname:"Les Grenadiers",         confColor:"#4ade80", website:"https://www.fhf.ht"},
-  "haiti":                {conf:"CONCACAF",titles:0,best:"Cuartos de final 1974",           nickname:"Les Grenadiers",         confColor:"#4ade80", website:"https://www.fhf.ht"},
-  "escocia":              {conf:"UEFA",    titles:0,best:"Fase de grupos (múltiples)",      nickname:"The Tartan Army",        confColor:"#7fb3f5", website:"https://www.scottishfa.co.uk"},
-  "scotland":             {conf:"UEFA",    titles:0,best:"Fase de grupos (múltiples)",      nickname:"The Tartan Army",        confColor:"#7fb3f5", website:"https://www.scottishfa.co.uk"},
-  "curazao":              {conf:"CONCACAF",titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Djou Bèrdènan",      confColor:"#4ade80", website:"https://www.knvbcuracao.com"},
-  "curacao":              {conf:"CONCACAF",titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Djou Bèrdènan",      confColor:"#4ade80", website:"https://www.knvbcuracao.com"},
-  "costa de marfil":      {conf:"CAF",     titles:0,best:"Cuartos de final 2006",           nickname:"Los Elefantes",          confColor:"#fbbf24", website:"https://www.fif.ci"},
-  "ivory coast":          {conf:"CAF",     titles:0,best:"Cuartos de final 2006",           nickname:"Los Elefantes",          confColor:"#fbbf24", website:"https://www.fif.ci"},
-  "suecia":               {conf:"UEFA",    titles:0,best:"3er lugar 1994",                  nickname:"Blågult (Az.-Amarillo)", confColor:"#7fb3f5", website:"https://www.svenskfotboll.se"},
-  "sweden":               {conf:"UEFA",    titles:0,best:"3er lugar 1994",                  nickname:"Blågult (Az.-Amarillo)", confColor:"#7fb3f5", website:"https://www.svenskfotboll.se"},
-  "túnez":                {conf:"CAF",     titles:0,best:"Octavos de final 1978",           nickname:"Los Águilas de Cartago", confColor:"#fbbf24", website:"https://www.ftf.org.tn"},
-  "tunisia":              {conf:"CAF",     titles:0,best:"Octavos de final 1978",           nickname:"Los Águilas de Cartago", confColor:"#fbbf24", website:"https://www.ftf.org.tn"},
-  "irán":                 {conf:"AFC",     titles:0,best:"Fase de grupos (múltiples)",      nickname:"Team Melli",             confColor:"#f87171", website:"https://www.ffiri.ir"},
-  "iran":                 {conf:"AFC",     titles:0,best:"Fase de grupos (múltiples)",      nickname:"Team Melli",             confColor:"#f87171", website:"https://www.ffiri.ir"},
-  "nueva zelanda":        {conf:"OFC",     titles:0,best:"Fase de grupos 1982, 2010",       nickname:"Los All Whites",         confColor:"#f87171", website:"https://www.nzfootball.co.nz"},
-  "new zealand":          {conf:"OFC",     titles:0,best:"Fase de grupos 1982, 2010",       nickname:"Los All Whites",         confColor:"#f87171", website:"https://www.nzfootball.co.nz"},
-  "cabo verde":           {conf:"CAF",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Tubarões Azuis",     confColor:"#fbbf24", website:"https://www.fcv.cv"},
-  "cape verde":           {conf:"CAF",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Tubarões Azuis",     confColor:"#fbbf24", website:"https://www.fcv.cv"},
-  "irak":                 {conf:"AFC",     titles:0,best:"Fase de grupos 1986",             nickname:"Los Leones de Mesopot.", confColor:"#f87171", website:"https://www.ifo.iq"},
-  "iraq":                 {conf:"AFC",     titles:0,best:"Fase de grupos 1986",             nickname:"Los Leones de Mesopot.", confColor:"#f87171", website:"https://www.ifo.iq"},
-  "noruega":              {conf:"UEFA",    titles:0,best:"Cuartos de final 1938",           nickname:"Løvene (Los Leones)",    confColor:"#7fb3f5", website:"https://www.fotball.no"},
-  "norway":               {conf:"UEFA",    titles:0,best:"Cuartos de final 1938",           nickname:"Løvene (Los Leones)",    confColor:"#7fb3f5", website:"https://www.fotball.no"},
-  "argelia":              {conf:"CAF",     titles:0,best:"Octavos de final 2014",           nickname:"Los Zorros del Desierto",confColor:"#fbbf24", website:"https://www.faf.dz"},
-  "algeria":              {conf:"CAF",     titles:0,best:"Octavos de final 2014",           nickname:"Los Zorros del Desierto",confColor:"#fbbf24", website:"https://www.faf.dz"},
-  "austria":              {conf:"UEFA",    titles:0,best:"3er lugar 1954",                  nickname:"Das Team",               confColor:"#7fb3f5", website:"https://www.oefb.at"},
-  "jordania":             {conf:"AFC",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Nashama",            confColor:"#f87171", website:"https://www.jfa.jo"},
-  "jordan":               {conf:"AFC",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Nashama",            confColor:"#f87171", website:"https://www.jfa.jo"},
-  "rd congo":             {conf:"CAF",     titles:0,best:"Cuartos de final 1974 (Zaire)",   nickname:"Los Leopardos",          confColor:"#fbbf24", website:"https://www.fecofa.org"},
-  "dr congo":             {conf:"CAF",     titles:0,best:"Cuartos de final 1974 (Zaire)",   nickname:"Los Leopardos",          confColor:"#fbbf24", website:"https://www.fecofa.org"},
-  "uzbekistán":           {conf:"AFC",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Lobos Blancos",      confColor:"#f87171", website:"https://www.ufa.uz"},
-  "uzbekistan":           {conf:"AFC",     titles:0,best:"Debut Copa Mundial 2026",         nickname:"Los Lobos Blancos",      confColor:"#f87171", website:"https://www.ufa.uz"},
-  "panamá":               {conf:"CONCACAF",titles:0,best:"Fase de grupos 2018",             nickname:"Los Canaleros",          confColor:"#4ade80", website:"https://www.fepafut.com"},
-  "panama":               {conf:"CONCACAF",titles:0,best:"Fase de grupos 2018",             nickname:"Los Canaleros",          confColor:"#4ade80", website:"https://www.fepafut.com"},
-  "paraguay":             {conf:"CONMEBOL",titles:0,best:"Cuartos de final 1954, 2010",     nickname:"La Albirroja",           confColor:"#4fc3f7", website:"https://www.apf.org.py"},
-  "rep. checa":           {conf:"UEFA",    titles:0,best:"Finalista (Checoslov.) 1934",     nickname:"Los Leones",             confColor:"#7fb3f5", website:"https://www.fotbal.cz"},
-  "república checa":      {conf:"UEFA",    titles:0,best:"Finalista (Checoslov.) 1934",     nickname:"Los Leones",             confColor:"#7fb3f5", website:"https://www.fotbal.cz"},
-  "bosnia-herzegovina":   {conf:"UEFA",    titles:0,best:"Fase de grupos 2014",             nickname:"Los Zmajevi (Dragones)", confColor:"#7fb3f5", website:"https://www.nfsbih.ba"},
-  "egipto":               {conf:"CAF",     titles:0,best:"Fase de grupos 1990",             nickname:"Los Faraones",           confColor:"#fbbf24", website:"https://www.efa.com.eg"},
-  "egypt":                {conf:"CAF",     titles:0,best:"Fase de grupos 1990",             nickname:"Los Faraones",           confColor:"#fbbf24", website:"https://www.efa.com.eg"},
-};
 
 function getStadiumInfo(name) {
   if (!name) return null;
@@ -497,7 +330,7 @@ function _setModalBetArea(p) {
   const abierto    = estaAbierto(p);
   const yaApostado = p.prediccion != null;
   const intentos   = p.intentos || 0;
-  const bloqueado  = yaApostado && intentos >= 2;
+  const bloqueado  = yaApostado && intentos >= MAX_BET_ATTEMPTS;
   const betEl      = document.getElementById("modal-bet-area");
 
   if (!desbloqueado) {
@@ -516,8 +349,8 @@ function _setModalBetArea(p) {
     const attemptDots = yaApostado ? `
       <div class="attempt-dots" style="justify-content:center;margin-bottom:.6rem">
         <span class="adot ${intentos >= 1 ? "used" : ""}"></span>
-        <span class="adot ${intentos >= 2 ? "used" : ""}"></span>
-        <span style="font-size:.7rem;color:var(--text-sub);margin-left:.3rem">${intentos}/2 usados</span>
+        <span class="adot ${intentos >= MAX_BET_ATTEMPTS ? "used" : ""}"></span>
+        <span style="font-size:.7rem;color:var(--text-sub);margin-left:.3rem">${intentos}/${MAX_BET_ATTEMPTS} usados</span>
       </div>` : "";
     betEl.innerHTML = `
       <div class="modal-bet-inner">
@@ -560,7 +393,7 @@ function _setModalBetArea(p) {
         <span class="modal-bet-label"><i class="bi bi-pencil-fill"></i>Tu apuesta</span>
         <div class="modal-bet-score">${_predLabel(p.prediccion, p)}</div>
         ${ptsBadge}
-        <span class="modal-intentos"><i class="bi bi-arrow-repeat"></i>${intentos}/2 intentos</span>
+        <span class="modal-intentos"><i class="bi bi-arrow-repeat"></i>${intentos}/${MAX_BET_ATTEMPTS} intentos</span>
       </div>`;
   } else {
     betEl.innerHTML = `
@@ -659,7 +492,7 @@ function tarjetaPartido(p) {
   const abierto    = estaAbierto(p);
   const yaApostado = p.prediccion != null;
   const intentos   = p.intentos || 0;
-  const bloqueado  = yaApostado && intentos >= 2;
+  const bloqueado  = yaApostado && intentos >= MAX_BET_ATTEMPTS;
   const clases     = ["match-card",
     p.finalizado ? "finalizado" : "",
     yaApostado   ? "apostado"   : "",
@@ -679,9 +512,9 @@ function tarjetaPartido(p) {
   const attemptDots = (abierto && yaApostado) ? `
     <div class="attempt-dots">
       <span class="adot ${intentos >= 1 ? 'used' : ''}"></span>
-      <span class="adot ${intentos >= 2 ? 'used' : ''}"></span>
+      <span class="adot ${intentos >= MAX_BET_ATTEMPTS ? 'used' : ''}"></span>
       <span style="font-size:.7rem;color:var(--text-sub);margin-left:.3rem">
-        ${bloqueado ? '<i class="bi bi-lock-fill"></i> Sin intentos' : `${intentos}/2 usados`}
+        ${bloqueado ? '<i class="bi bi-lock-fill"></i> Sin intentos' : `${intentos}/${MAX_BET_ATTEMPTS} usados`}
       </span>
     </div>` : "";
   let apuestaHTML;

@@ -4,8 +4,21 @@ import psycopg2
 from flask import Blueprint, request, jsonify
 from database import get_db, row_as_dict
 from auth import solo_admin, token_requerido
+from constants import CHAMPION_POINTS
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita):
+    cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
+    real = (
+        "L" if goles_local > goles_visita else
+        "V" if goles_visita > goles_local else
+        "E"
+    )
+    for ap in cur.fetchall():
+        pts = 1 if ap["prediccion"] == real else 0
+        cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
 
 
 @admin_bp.route("/partido", methods=["POST"])
@@ -81,15 +94,7 @@ def editar_partido(partido_id):
             return jsonify({"error": "Partido no encontrado"}), 404
 
         if finalizado:
-            cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
-            real = (
-                "L" if goles_local > goles_visita else
-                "V" if goles_visita > goles_local else
-                "E"
-            )
-            for ap in cur.fetchall():
-                pts = 1 if ap["prediccion"] == real else 0
-                cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
+            _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
 
         conn.commit()
         cur.close()
@@ -129,15 +134,7 @@ def ingresar_resultado(partido_id):
             "UPDATE partidos SET goles_local=%s, goles_visita=%s, finalizado=TRUE WHERE id=%s",
             (goles_local, goles_visita, partido_id)
         )
-        cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
-        real = (
-            "L" if goles_local > goles_visita else
-            "V" if goles_visita > goles_local else
-            "E"
-        )
-        for ap in cur.fetchall():
-            pts = 1 if ap["prediccion"] == real else 0
-            cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
+        _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
         conn.commit()
         cur.close()
         conn.close()
@@ -168,8 +165,8 @@ def definir_campeon_real():
         conn = get_db()
         cur  = conn.cursor()
         cur.execute(
-            "UPDATE apuesta_campeon SET puntos_campeon=5 WHERE LOWER(campeon)=LOWER(%s)",
-            (campeon_real,)
+            "UPDATE apuesta_campeon SET puntos_campeon=%s WHERE LOWER(campeon)=LOWER(%s)",
+            (CHAMPION_POINTS, campeon_real)
         )
         cur.execute(
             "UPDATE apuesta_campeon SET puntos_campeon=0 WHERE LOWER(campeon)!=LOWER(%s)",

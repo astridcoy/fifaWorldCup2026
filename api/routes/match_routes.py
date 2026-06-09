@@ -2,6 +2,7 @@ from datetime import timedelta
 from flask import Blueprint, request, jsonify
 from database import get_db, row_as_dict, chile_now
 from auth import token_requerido
+from constants import BET_CLOSE_HOURS, MAX_BET_ATTEMPTS
 
 _MAX_GOLES = 10
 
@@ -72,9 +73,9 @@ def apostar():
             return jsonify({"error": "Partido no encontrado"}), 404
         if partido["finalizado"]:
             return jsonify({"error": "El partido ya finalizó, no puedes apostar"}), 400
-        deadline = partido["fecha"] - timedelta(hours=1)
+        deadline = partido["fecha"] - timedelta(hours=BET_CLOSE_HOURS)
         if chile_now() >= deadline:
-            return jsonify({"error": "Las apuestas cerraron 1 hora antes del partido"}), 400
+            return jsonify({"error": f"Las apuestas cerraron {BET_CLOSE_HOURS} hora{'s' if BET_CLOSE_HOURS != 1 else ''} antes del partido"}), 400
 
         cur.execute(
             "SELECT intentos FROM apuestas WHERE id_usuario = %s AND id_partido = %s",
@@ -83,10 +84,10 @@ def apostar():
         existente = cur.fetchone()
 
         if existente:
-            if existente["intentos"] >= 2:
+            if existente["intentos"] >= MAX_BET_ATTEMPTS:
                 cur.close()
                 conn.close()
-                return jsonify({"error": "Ya usaste los 2 intentos permitidos para este partido"}), 400
+                return jsonify({"error": f"Ya usaste los {MAX_BET_ATTEMPTS} intentos permitidos para este partido"}), 400
             cur.execute("""
                 UPDATE apuestas SET prediccion = %s, intentos = intentos + 1
                 WHERE id_usuario = %s AND id_partido = %s

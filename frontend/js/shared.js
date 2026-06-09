@@ -42,6 +42,78 @@ document.getElementById("btn-logout").addEventListener("click", () => {
   window.location.href = "login.html";
 });
 
+(function initNavMenus() {
+  const initial = (NOMBRE || "?")[0].toUpperCase();
+
+  // ── Left nav menu ──
+  const menuWrap = document.getElementById("nav-left-menu");
+  const menuBtn  = document.getElementById("nav-menu-btn");
+  const menuDrop = document.getElementById("nav-menu-dropdown");
+  const chatLink = document.getElementById("nav-dd-chat");
+
+  if (menuBtn && menuDrop) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = menuDrop.classList.toggle("open");
+      menuBtn.classList.toggle("active", open);
+      closeAvatarDrop();
+    });
+  }
+  if (chatLink) chatLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    menuDrop?.classList.remove("open");
+    menuBtn?.classList.remove("active");
+    if (typeof openChatWidget === "function") openChatWidget();
+  });
+
+  // ── Right avatar ──
+  const avatarWrap = document.getElementById("nav-avatar-wrap");
+  const avatarBtn  = document.getElementById("nav-avatar-btn");
+  const avatarDrop = document.getElementById("nav-avatar-dropdown");
+  const circleEl   = document.getElementById("nav-avatar-circle");
+  const infoInitEl = document.getElementById("nav-avatar-info-initial");
+  const fullnameEl = document.getElementById("nav-avatar-fullname");
+  const adminLink  = document.getElementById("nav-dd-admin");
+
+  if (circleEl)   circleEl.textContent   = initial;
+  if (infoInitEl) infoInitEl.textContent = initial;
+  if (fullnameEl) fullnameEl.textContent = NOMBRE || "Usuario";
+  if (adminLink && ROL === "admin") adminLink.style.display = "flex";
+
+  if (avatarBtn && avatarDrop) {
+    avatarBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = avatarDrop.classList.toggle("open");
+      avatarBtn.classList.toggle("active", open);
+      closeMenuDrop();
+    });
+  }
+
+  function closeMenuDrop()   { menuDrop?.classList.remove("open");   menuBtn?.classList.remove("active"); }
+  function closeAvatarDrop() { avatarDrop?.classList.remove("open"); avatarBtn?.classList.remove("active"); }
+
+  document.addEventListener("click", (e) => {
+    if (!menuWrap?.contains(e.target))   closeMenuDrop();
+    if (!avatarWrap?.contains(e.target)) closeAvatarDrop();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { closeMenuDrop(); closeAvatarDrop(); }
+  });
+
+  // Carga foto de perfil en el avatar
+  (async () => {
+    try {
+      const res = await fetch(`${API}/perfil`, { headers: headers() });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.foto_perfil) return;
+      const imgHtml = `<img src="${data.foto_perfil}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" alt="avatar" />`;
+      if (circleEl)   circleEl.innerHTML   = imgHtml;
+      if (infoInitEl) infoInitEl.innerHTML = imgHtml;
+    } catch (_) {}
+  })();
+})();
+
 (function initSidebar() {
   const hamburger = document.getElementById("nav-hamburger");
   const drawer    = document.getElementById("sidebar-drawer");

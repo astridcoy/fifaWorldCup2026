@@ -1,5 +1,4 @@
 (function () {
-  const API        = "https://polla-api-production.up.railway.app";
   const ME_ID      = parseInt(localStorage.getItem("id") || "0");
   const ME_ROL     = localStorage.getItem("rol") || "";
   const TZ         = "America/Santiago";
