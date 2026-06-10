@@ -68,14 +68,28 @@ def editar_partido(partido_id):
     bandera_visita = datos.get("bandera_visita", "")
     grupo          = datos.get("grupo", "")
     finalizado     = bool(datos.get("finalizado", False))
-    goles_local    = datos.get("goles_local", 0)
-    goles_visita   = datos.get("goles_visita", 0)
+    goles_local    = int(datos.get("goles_local", 0))
+    goles_visita   = int(datos.get("goles_visita", 0))
     nombre_estadio = datos.get("nombre_estadio", "")
     tiene_imagen   = "imagen_estadio" in datos
 
     try:
         conn = get_db()
         cur  = conn.cursor()
+
+        # Capture previous state before overwriting
+        cur.execute(
+            "SELECT finalizado, goles_local, goles_visita FROM partidos WHERE id = %s",
+            (partido_id,)
+        )
+        prev = cur.fetchone()
+        if not prev:
+            cur.close(); conn.close()
+            return jsonify({"error": "Partido no encontrado"}), 404
+        prev_finalizado = prev["finalizado"]
+        prev_gl         = prev["goles_local"]
+        prev_gv         = prev["goles_visita"]
+
         sets = (
             "equipo_local=%s, equipo_visita=%s, bandera_local=%s, bandera_visita=%s,"
             "fecha=%s, fase=%s, grupo=%s, finalizado=%s, goles_local=%s, goles_visita=%s,"
@@ -90,11 +104,21 @@ def editar_partido(partido_id):
             values.append(datos["imagen_estadio"])
         values.append(partido_id)
         cur.execute(f"UPDATE partidos SET {sets} WHERE id=%s", values)
-        if cur.rowcount == 0:
-            return jsonify({"error": "Partido no encontrado"}), 404
 
         if finalizado:
-            _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
+            result_changed = (
+                not prev_finalizado or
+                prev_gl != goles_local or
+                prev_gv != goles_visita
+            )
+            if result_changed:
+                _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
+        elif prev_finalizado:
+            # Un-finalizing: remove all points so they don't persist as stale data
+            cur.execute(
+                "UPDATE apuestas SET puntos = NULL WHERE id_partido = %s",
+                (partido_id,)
+            )
 
         conn.commit()
         cur.close()
@@ -124,9 +148,15 @@ def eliminar_partido(partido_id):
 @admin_bp.route("/resultado/<int:partido_id>", methods=["PUT"])
 @solo_admin
 def ingresar_resultado(partido_id):
-    datos        = request.get_json()
-    goles_local  = datos["goles_local"]
-    goles_visita = datos["goles_visita"]
+    datos = request.get_json(silent=True) or {}
+    if "goles_local" not in datos or "goles_visita" not in datos:
+        return jsonify({"error": "Se requiere goles_local y goles_visita"}), 400
+    try:
+        goles_local  = int(datos["goles_local"])
+        goles_visita = int(datos["goles_visita"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "goles_local y goles_visita deben ser números"}), 400
+
     try:
         conn = get_db()
         cur  = conn.cursor()
@@ -134,6 +164,9 @@ def ingresar_resultado(partido_id):
             "UPDATE partidos SET goles_local=%s, goles_visita=%s, finalizado=TRUE WHERE id=%s",
             (goles_local, goles_visita, partido_id)
         )
+        if cur.rowcount == 0:
+            cur.close(); conn.close()
+            return jsonify({"error": "Partido no encontrado"}), 404
         _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
         conn.commit()
         cur.close()
