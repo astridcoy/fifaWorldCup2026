@@ -14,6 +14,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, FRONTEND_URL
+from constants import BET_CLOSE_HOURS
 from database import get_db, chile_now
 
 
@@ -83,6 +84,7 @@ def send_bet_reminder(to_email, nombre, partido):
                  if hasattr(fecha_dt, "strftime") else str(fecha_dt))
     local  = partido["equipo_local"]
     visita = partido["equipo_visita"]
+    cierre_label = f"{BET_CLOSE_HOURS} hora{'s' if BET_CLOSE_HOURS != 1 else ''}"
 
     subject = f"Apuesta pronto: {local} vs {visita} · cierra en ~2 horas"
     url     = FRONTEND_URL + "/index.html"
@@ -91,7 +93,7 @@ def send_bet_reminder(to_email, nombre, partido):
         f"Hola {nombre},\n\n"
         f"Las apuestas para {local} vs {visita} cierran muy pronto.\n"
         f"El partido comienza el {fecha_str}.\n\n"
-        f"Recuerda: las apuestas se cierran 24 horas antes del inicio.\n"
+        f"Recuerda: las apuestas se cierran {cierre_label} antes del inicio.\n"
         f"Ingresa en: {url}\n\n"
         f"Juega FIFA World Cup 2026"
     )
@@ -104,8 +106,8 @@ def send_bet_reminder(to_email, nombre, partido):
             f'<p style="font-size:1.15rem;font-weight:700;margin:.2rem 0">{local} vs {visita}</p>'
             f'<p style="color:#7a91b3;font-size:.85rem;margin:.4rem 0 0">&#128197; {fecha_str}</p>'
         )
-        + '<p style="color:#f87171;font-weight:600">&#9201; Las apuestas cierran '
-          '<strong>24&nbsp;horas antes</strong> del partido. ¡Tienes poco tiempo!</p>'
+        + f'<p style="color:#f87171;font-weight:600">&#9201; Las apuestas cierran '
+          f'<strong>{cierre_label} antes</strong> del partido. ¡Tienes poco tiempo!</p>'
         + _btn(url, "&#9917; Apostar ahora")
         + _FTR
     )
@@ -125,16 +127,18 @@ def send_result_notification(to_email, nombre, partido_row):
     subject = f"Resultado: {local} {gl}-{gv} {visita} | Juega FIFA 2026"
     url     = FRONTEND_URL + "/ranking.html"
 
+    _pred_labels = {"L": f"{local} gana", "E": "Empate", "V": f"{visita} gana"}
+    prediccion   = partido_row.get("prediccion")
+    pred_texto   = _pred_labels.get(prediccion, "—")
+
     apuesta_html = ""
-    if partido_row.get("goles_local_apostado") is not None:
-        al, av   = partido_row["goles_local_apostado"], partido_row["goles_visita_apostado"]
-        pts_color = ("#F5B800" if pts == 3
-                     else ("#4ade80" if pts == 1 else "#f87171"))
+    if prediccion:
+        pts_color = "#4ade80" if pts == 1 else "#f87171"
         apuesta_html = (
             '<div style="background:#0f1e35;border:1px solid rgba(74,222,128,.2);'
             'border-radius:8px;padding:.8rem;margin-top:.7rem;text-align:left">'
             f'<p style="margin:0 0 .3rem;font-size:.85rem;color:#7a91b3">'
-            f'Tu apuesta: <strong style="color:#e2e8f0">{al} – {av}</strong></p>'
+            f'Tu apuesta: <strong style="color:#e2e8f0">{pred_texto}</strong></p>'
             f'<p style="margin:0;font-size:.85rem;color:#7a91b3">'
             f'Puntos obtenidos: <strong style="color:{pts_color};font-size:1rem">'
             f'{pts_str}</strong></p></div>'
@@ -143,8 +147,7 @@ def send_result_notification(to_email, nombre, partido_row):
     text = (
         f"Hola {nombre},\n\n"
         f"Resultado registrado: {local} {gl}-{gv} {visita}\n"
-        f"Tu apuesta: {partido_row.get('goles_local_apostado')} - "
-        f"{partido_row.get('goles_visita_apostado')}\n"
+        f"Tu apuesta: {pred_texto}\n"
         f"Puntos: {pts_str}\n\n"
         f"Ver ranking actualizado: {url}\n\nJuega FIFA 2026"
     )
@@ -175,7 +178,7 @@ def notify_result_to_all(partido_id):
         cur  = conn.cursor()
         cur.execute("""
             SELECT u.email, u.nombre,
-                   a.goles_local_apostado, a.goles_visita_apostado, a.puntos,
+                   a.prediccion, a.puntos,
                    p.equipo_local, p.equipo_visita, p.goles_local, p.goles_visita
             FROM   apuestas  a
             JOIN   usuarios  u ON u.id = a.id_usuario
@@ -194,7 +197,7 @@ def run_bet_reminders():
     """
     Job programado: envía recordatorio a usuarios sin apuesta cuando
     las apuestas para un partido cierran en las próximas 1-3 horas
-    (es decir, el partido empieza en 25-27 horas).
+    (es decir, el partido empieza en BET_CLOSE_HOURS+1 a BET_CLOSE_HOURS+3 horas).
     """
     if not SMTP_HOST:
         return
@@ -202,8 +205,8 @@ def run_bet_reminders():
         conn         = get_db()
         cur          = conn.cursor()
         now          = chile_now()
-        window_start = now + timedelta(hours=25)
-        window_end   = now + timedelta(hours=27)
+        window_start = now + timedelta(hours=BET_CLOSE_HOURS + 1)
+        window_end   = now + timedelta(hours=BET_CLOSE_HOURS + 3)
         cur.execute("""
             SELECT p.id, p.equipo_local, p.equipo_visita, p.fecha,
                    u.id AS uid, u.nombre, u.email

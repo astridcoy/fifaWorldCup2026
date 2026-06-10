@@ -324,7 +324,6 @@ def eliminar_usuario(uid):
 
 
 @admin_bp.route("/apuestas", methods=["GET"])
-@token_requerido
 @solo_admin
 def ver_apuestas():
     try:

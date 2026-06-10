@@ -168,13 +168,12 @@ async function cargarPartidos(forceFresh = false) {
 
 function construirTabs() {
   const fases = [...new Set(partidos.map(p => p.fase))];
-  faseActiva  = fases[0] || "";
+  if (!fases.includes(faseActiva)) faseActiva = fases[0] || "";
   const cont  = document.getElementById("tabs-fases");
   cont.innerHTML = "";
   fases.forEach(fase => {
     const pend = partidos.filter(p =>
-      p.fase === fase && estaAbierto(p) &&
-      (p.goles_local_apostado === null || p.goles_local_apostado === undefined)
+      p.fase === fase && estaAbierto(p) && p.prediccion == null
     ).length;
     const badgeVal = fase === "Grupos"
       ? new Set(partidos.filter(p => p.fase === "Grupos" && p.grupo).map(p => p.grupo)).size
@@ -613,9 +612,9 @@ async function registrarApuesta(idPartido) {
     toast("✅ Apuesta guardada");
     _actualizarPartidoLocal(idPartido, pred);
     try { sessionStorage.setItem("polla_p_v1", JSON.stringify({ d: partidos, t: Date.now() })); } catch (_) {}
+    construirTabs();
     renderPartidos();
     updateStatsBar();
-    construirTabs();
   } catch (_) { toast("Error de conexión", "error"); }
 }
 
@@ -637,9 +636,9 @@ async function registrarApuestaModal(idPartido) {
     try { sessionStorage.setItem("polla_p_v1", JSON.stringify({ d: partidos, t: Date.now() })); } catch (_) {}
     const pUpd = partidos.find(x => x.id === idPartido);
     if (pUpd) _setModalBetArea(pUpd);
+    construirTabs();
     renderPartidos();
     updateStatsBar();
-    construirTabs();
   } catch (_) {
     toast("Error de conexión", "error");
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apostar'; }

@@ -16,5 +16,5 @@ SMTP_PORT        = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER        = os.environ.get("SMTP_USER", "")
 SMTP_PASS        = os.environ.get("SMTP_PASS", "")
 SMTP_FROM        = os.environ.get("SMTP_FROM", "") or SMTP_USER
-FRONTEND_URL     = os.environ.get("FRONTEND_URL", "https://juega-fifa2026.netlify.app")
+FRONTEND_URL     = os.environ.get("FRONTEND_URL", "https://polla-mundial-e82.pages.dev")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
