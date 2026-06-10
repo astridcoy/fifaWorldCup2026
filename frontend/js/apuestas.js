@@ -57,30 +57,34 @@ const _imgObserver = new IntersectionObserver((entries) => {
 
 async function _loadStadiumImg(pid, imgEl) {
   if (!imgEl) return;
-  // Use static CDN image if available for this stadium
   const partido = partidos.find(p => p.id === parseInt(pid));
-  const stInfo  = partido ? getStadiumInfo(partido.nombre_estadio) : null;
+
+  // DB image takes priority: admin may have uploaded a custom photo
+  if (partido?.tiene_imagen) {
+    if (_imgCache.has(pid)) {
+      imgEl.src = _imgCache.get(pid);
+      imgEl.style.opacity = "1";
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/partidos/${pid}/imagen`, { headers: headers() });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.imagen_estadio) {
+        _imgCache.set(pid, data.imagen_estadio);
+        imgEl.src = data.imagen_estadio;
+        imgEl.style.opacity = "1";
+        return;
+      }
+    } catch (_) {}
+  }
+
+  // Fall back to static CDN image
+  const stInfo = partido ? getStadiumInfo(partido.nombre_estadio) : null;
   if (stInfo?.img) {
     imgEl.src = stInfo.img;
     imgEl.style.opacity = "1";
-    return;
   }
-  // Fall back to API-stored image
-  if (_imgCache.has(pid)) {
-    imgEl.src = _imgCache.get(pid);
-    imgEl.style.opacity = "1";
-    return;
-  }
-  try {
-    const res = await fetch(`${API}/partidos/${pid}/imagen`, { headers: headers() });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.imagen_estadio) {
-      _imgCache.set(pid, data.imagen_estadio);
-      imgEl.src = data.imagen_estadio;
-      imgEl.style.opacity = "1";
-    }
-  } catch (_) {}
 }
 
 function _observeStadiumImages() {
@@ -420,10 +424,10 @@ function showModalPartido(p) {
   const _heroEl = document.getElementById("modal-hero");
   _heroEl.style.backgroundImage = "";
   const _stInfo = getStadiumInfo(p.nombre_estadio);
-  if (_stInfo?.img) {
-    _heroEl.style.backgroundImage = `url(${_stInfo.img})`;
-  } else if (p.tiene_imagen) {
-    const _pid = String(p.id);
+  const _pid    = String(p.id);
+  if (p.tiene_imagen) {
+    // DB image takes priority; use static as instant placeholder while fetching
+    if (_stInfo?.img) _heroEl.style.backgroundImage = `url(${_stInfo.img})`;
     if (_imgCache.has(_pid)) {
       _heroEl.style.backgroundImage = `url(${_imgCache.get(_pid)})`;
     } else {
@@ -436,6 +440,8 @@ function showModalPartido(p) {
           }
         }).catch(() => {});
     }
+  } else if (_stInfo?.img) {
+    _heroEl.style.backgroundImage = `url(${_stInfo.img})`;
   }
   document.getElementById("modal-phase-chip").textContent = `${p.fase}${p.grupo ? " · Grupo " + p.grupo : ""}`;
   document.getElementById("modal-venue").textContent      = p.nombre_estadio || "";
@@ -559,7 +565,8 @@ function tarjetaPartido(p) {
   } else {
     apuestaHTML = `<div class="bet-section"><p class="match-closed-msg m-0" style="padding:.3rem 0"><i class="bi bi-slash-circle me-1"></i>No apostaste en este partido</p></div>`;
   }
-  const estadioHTML = p.tiene_imagen ? `
+  const _hasImg = p.tiene_imagen || !!getStadiumInfo(p.nombre_estadio)?.img;
+  const estadioHTML = _hasImg ? `
     <div class="match-stadium stadium-lazy-wrap" data-pid="${p.id}">
       <img class="stadium-img-lazy" src="" alt="${escHtml(p.nombre_estadio || 'Estadio')}" style="opacity:0;transition:opacity .3s" />
       <div class="match-stadium-overlay">
