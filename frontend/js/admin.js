@@ -130,7 +130,12 @@ function renderListaPartidos() {
         </td>
         <td>
           ${p.finalizado
-            ? `<strong style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px">${p.goles_local} – ${p.goles_visita}</strong>`
+            ? (() => {
+                const gl = p.goles_local, gv = p.goles_visita;
+                const lbl = gl > gv ? "Local gana" : gv > gl ? "Visita gana" : "Empate";
+                const cls = gl > gv ? "pred-L"     : gv > gl ? "pred-V"      : "pred-E";
+                return `<span class="pred-tag ${cls}">${lbl}</span>`;
+              })()
             : `<span style="color:var(--text-sub);font-size:.8rem"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>`}
         </td>
         <td style="text-align:center;white-space:nowrap">
@@ -370,10 +375,16 @@ function abrirEditar(id) {
   }
 
   const finalizado = !!p.finalizado;
-  document.getElementById("edit-finalizado").checked        = finalizado;
-  document.getElementById("edit-goles-local").value         = p.goles_local  ?? 0;
-  document.getElementById("edit-goles-visita").value        = p.goles_visita ?? 0;
+  document.getElementById("edit-finalizado").checked = finalizado;
   document.getElementById("wrap-resultado-editar").style.display = finalizado ? "" : "none";
+
+  let initRes = "";
+  if (finalizado) {
+    const gl = p.goles_local ?? 0;
+    const gv = p.goles_visita ?? 0;
+    initRes = gl > gv ? "L" : gv > gl ? "V" : "E";
+  }
+  _setEditResultado(initRes);
 
   syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
   msgClear("msg-editar");
@@ -400,9 +411,13 @@ document.getElementById("btn-guardar-editar").addEventListener("click", async ()
     return;
   }
 
-  const finalizado  = document.getElementById("edit-finalizado").checked;
-  const golesLocal  = parseInt(document.getElementById("edit-goles-local").value)  || 0;
-  const golesVisita = parseInt(document.getElementById("edit-goles-visita").value) || 0;
+  const finalizado = document.getElementById("edit-finalizado").checked;
+  if (finalizado && !_editResSeleccionado) {
+    msgErr("msg-editar", "Selecciona un resultado (Local gana / Empate / Visita gana)");
+    return;
+  }
+  const golesLocal  = _editResSeleccionado === "L" ? 1 : 0;
+  const golesVisita = _editResSeleccionado === "V" ? 1 : 0;
   const btn = document.getElementById("btn-guardar-editar");
   btn.disabled  = true;
   btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
@@ -465,16 +480,50 @@ async function eliminarPartido(id) {
 }
 
 // ── RESULTADO ─────────────────────────────────────────────────
+let _resSeleccionado = "";
+
+function _setupResBtns(prefix, onSelect) {
+  ["L", "E", "V"].forEach(val => {
+    document.getElementById(`${prefix}-btn-${val}`).addEventListener("click", () => {
+      ["L", "E", "V"].forEach(v =>
+        document.getElementById(`${prefix}-btn-${v}`).className =
+          `btn-res-opcion flex-fill${v === val ? ` active-${v}` : ""}`
+      );
+      onSelect(val);
+    });
+  });
+}
+
+_setupResBtns("res", val => { _resSeleccionado = val; });
+
+let _editResSeleccionado = "";
+
+function _setEditResultado(val) {
+  _editResSeleccionado = val;
+  ["L", "E", "V"].forEach(v =>
+    document.getElementById(`edit-res-btn-${v}`).className =
+      `btn-res-opcion flex-fill${v === val ? ` active-${v}` : ""}`
+  );
+}
+
+_setupResBtns("edit-res", val => { _setEditResultado(val); });
+
 document.getElementById("btn-resultado").addEventListener("click", async () => {
   const idPartido = document.getElementById("sel-partido").value;
-  const gl = parseInt(document.getElementById("res-local").value);
-  const gv = parseInt(document.getElementById("res-visita").value);
 
   if (!idPartido) {
     msgErr("msg-resultado", "Selecciona un partido");
     return;
   }
-  if (!confirm(`¿Confirmas el resultado ${gl} - ${gv}?\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+  if (!_resSeleccionado) {
+    msgErr("msg-resultado", "Selecciona un resultado (Local gana / Empate / Visita gana)");
+    return;
+  }
+  const resTextos = { L: "Local gana", E: "Empate", V: "Visita gana" };
+  if (!confirm(`¿Confirmas que el resultado es "${resTextos[_resSeleccionado]}"?\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+
+  const gl = _resSeleccionado === "L" ? 1 : 0;
+  const gv = _resSeleccionado === "V" ? 1 : 0;
 
   try {
     const res = await fetch(`${API}/admin/resultado/${idPartido}`, {
@@ -489,6 +538,10 @@ document.getElementById("btn-resultado").addEventListener("click", async () => {
     }
     msgOk("msg-resultado", "Resultado ingresado y puntos calculados");
     toast("✅ Resultado registrado");
+    _resSeleccionado = "";
+    ["L", "E", "V"].forEach(v =>
+      document.getElementById(`res-btn-${v}`).className = "btn-res-opcion flex-fill"
+    );
     cargarPartidos();
   } catch (_) {
     msgErr("msg-resultado", "Error de conexión");
@@ -751,7 +804,12 @@ function renderVotos() {
         ? `<span class="pts-badge ${pts === 1 ? "pts-1" : "pts-0"}">${pts} pt</span>`
         : '<span style="color:var(--text-sub);font-size:.8rem">—</span>';
       const resultado = v.finalizado
-        ? `<strong style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px">${v.resultado_local} – ${v.resultado_visita}</strong>`
+        ? (() => {
+            const gl = v.resultado_local, gv = v.resultado_visita;
+            const lbl = gl > gv ? "Local gana" : gv > gl ? "Visita gana" : "Empate";
+            const cls = gl > gv ? "pred-L"     : gv > gl ? "pred-V"      : "pred-E";
+            return `<span class="pred-tag ${cls}">${lbl}</span>`;
+          })()
         : '<span style="color:var(--text-sub);font-size:.8rem"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>';
       const predLabels = { L: "Local gana", E: "Empate", V: "Visita gana" };
       const predHtml = v.prediccion
