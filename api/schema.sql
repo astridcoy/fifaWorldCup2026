@@ -38,12 +38,19 @@ CREATE TABLE IF NOT EXISTS apuestas (
     UNIQUE (id_usuario, id_partido)
 );
 
--- Tabla de apuesta al campeón (una por usuario)
+-- Tabla de apuesta al podio (campeón, 2do y 3er lugar; una fila por usuario)
 CREATE TABLE IF NOT EXISTS apuesta_campeon (
-    id              SERIAL PRIMARY KEY,
-    id_usuario      INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE UNIQUE,
-    campeon         VARCHAR(80) NOT NULL,
-    puntos_campeon  INT NOT NULL DEFAULT 0
+    id               SERIAL PRIMARY KEY,
+    id_usuario       INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE UNIQUE,
+    campeon          VARCHAR(80),
+    puntos_campeon   INT NOT NULL DEFAULT 0,
+    intentos_campeon SMALLINT NOT NULL DEFAULT 0,
+    segundo_lugar    VARCHAR(80),
+    puntos_segundo   INT NOT NULL DEFAULT 0,
+    intentos_segundo SMALLINT NOT NULL DEFAULT 0,
+    tercer_lugar     VARCHAR(80),
+    puntos_tercero   INT NOT NULL DEFAULT 0,
+    intentos_tercero SMALLINT NOT NULL DEFAULT 0
 );
 
 -- ============================================================

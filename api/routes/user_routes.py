@@ -2,7 +2,7 @@ import re
 import bcrypt
 import psycopg2
 from flask import Blueprint, request, jsonify
-from database import get_db
+from database import get_db, row_as_dict
 from auth import token_requerido
 from routes.auth_routes import _password_valido, _email_valido
 
@@ -120,16 +120,20 @@ def perfil_publico(user_id):
         cur.execute("""
             SELECT u.id, u.nombre, u.foto_perfil,
                    u.estado, u.biografia, u.cancion_url, u.estado_animo,
-                   COALESCE(SUM(a.puntos), 0) + COALESCE(ac.puntos_campeon, 0) AS total_puntos,
+                   COALESCE(SUM(a.puntos), 0) + COALESCE(ac.puntos_campeon, 0)
+                     + COALESCE(ac.puntos_segundo, 0) + COALESCE(ac.puntos_tercero, 0) AS total_puntos,
                    COUNT(CASE WHEN a.puntos > 0 THEN 1 END)  AS aciertos,
-                   ac.campeon AS campeon_apostado
+                   ac.campeon AS campeon_apostado,
+                   ac.segundo_lugar AS segundo_apostado,
+                   ac.tercer_lugar AS tercer_apostado
             FROM usuarios u
             LEFT JOIN apuestas a          ON a.id_usuario  = u.id AND a.puntos IS NOT NULL
             LEFT JOIN apuesta_campeon ac  ON ac.id_usuario = u.id
             WHERE u.id = %s
             GROUP BY u.id, u.nombre, u.foto_perfil,
                      u.estado, u.biografia, u.cancion_url, u.estado_animo,
-                     ac.puntos_campeon, ac.campeon
+                     ac.puntos_campeon, ac.campeon, ac.puntos_segundo, ac.segundo_lugar,
+                     ac.puntos_tercero, ac.tercer_lugar
         """, (user_id,))
         row = cur.fetchone()
         cur.close()
@@ -141,19 +145,52 @@ def perfil_publico(user_id):
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
+@user_bp.route("/usuarios/<int:user_id>/no-votados", methods=["GET"])
+@token_requerido
+def no_votados(user_id):
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("""
+            SELECT p.id, p.equipo_local, p.equipo_visita,
+                   p.bandera_local, p.bandera_visita, p.fecha, p.fase, p.grupo
+            FROM partidos p
+            WHERE p.finalizado = TRUE
+              AND NOT EXISTS (
+                  SELECT 1 FROM apuestas a
+                  WHERE a.id_partido = p.id AND a.id_usuario = %s
+              )
+            ORDER BY p.fecha ASC
+        """, (user_id,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify([row_as_dict(r) for r in rows])
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
 @user_bp.route("/mi-campeon", methods=["GET"])
 @token_requerido
 def mi_campeon():
     try:
         conn = get_db()
         cur  = conn.cursor()
-        cur.execute(
-            "SELECT campeon FROM apuesta_campeon WHERE id_usuario = %s",
-            (request.usuario_id,)
-        )
+        cur.execute("""
+            SELECT campeon, segundo_lugar, tercer_lugar,
+                   intentos_campeon, intentos_segundo, intentos_tercero
+            FROM apuesta_campeon WHERE id_usuario = %s
+        """, (request.usuario_id,))
         fila = cur.fetchone()
         cur.close()
         conn.close()
-        return jsonify({"campeon": fila["campeon"] if fila else ""})
+        return jsonify({
+            "campeon":           (fila["campeon"]       if fila else "") or "",
+            "segundo_lugar":     (fila["segundo_lugar"] if fila else "") or "",
+            "tercer_lugar":      (fila["tercer_lugar"]  if fila else "") or "",
+            "intentos_campeon":  fila["intentos_campeon"] if fila else 0,
+            "intentos_segundo":  fila["intentos_segundo"] if fila else 0,
+            "intentos_tercero":  fila["intentos_tercero"] if fila else 0,
+        })
     except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500

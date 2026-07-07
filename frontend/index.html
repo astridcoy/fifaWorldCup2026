@@ -27,25 +27,61 @@
   <!-- Stats bar -->
   <div id="stats-bar" class="stats-bar-wrap"></div>
 
-  <!-- Champion section -->
+  <!-- Podio del Mundial: campeón, 2do y 3er lugar -->
   <div class="campeon-card">
     <img src="img/fifa2026-logo.png" class="campeon-trophy" alt="FIFA 2026" />
-    <div class="campeon-info">
-      <h3>Campeón del Mundial</h3>
-      <p>Acertar el campeón te da <strong style="color:var(--gold)">5 puntos</strong> al final del torneo</p>
-    </div>
-    <div class="campeon-controls">
-      <select id="sel-campeon" class="form-select">
-        <option value="">— Elige un país —</option>
-      </select>
-      <button class="btn-fifa-campeon" id="btn-campeon">
-        <i class="bi bi-star me-1"></i> Apostar campeón
-      </button>
+    <div class="podio-rows">
+      <h3 class="podio-title">Podio del Mundial</h3>
+
+      <div class="podio-row">
+        <span class="podio-row-label"><span class="podio-row-icon">🏆</span>Campeón <strong style="color:var(--gold)">(5 pts)</strong></span>
+        <div class="campeon-controls" id="controls-campeon">
+          <select id="sel-campeon" class="form-select">
+            <option value="">— Elige un país —</option>
+          </select>
+          <button class="btn-fifa-campeon" id="btn-campeon">
+            <i class="bi bi-star me-1"></i> Apostar
+          </button>
+        </div>
+      </div>
+
+      <div class="podio-row">
+        <span class="podio-row-label"><span class="podio-row-icon">🥈</span>2do lugar <strong style="color:var(--gold)">(3 pts)</strong></span>
+        <div class="campeon-controls" id="controls-segundo">
+          <select id="sel-segundo" class="form-select">
+            <option value="">— Elige un país —</option>
+          </select>
+          <button class="btn-fifa-campeon" id="btn-segundo">
+            <i class="bi bi-award me-1"></i> Apostar
+          </button>
+        </div>
+      </div>
+
+      <div class="podio-row">
+        <span class="podio-row-label"><span class="podio-row-icon">🥉</span>3er lugar <strong style="color:var(--gold)">(2 pts)</strong></span>
+        <div class="campeon-controls" id="controls-tercero">
+          <select id="sel-tercero" class="form-select">
+            <option value="">— Elige un país —</option>
+          </select>
+          <button class="btn-fifa-campeon" id="btn-tercero">
+            <i class="bi bi-award me-1"></i> Apostar
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- Phase tabs -->
-  <div class="phase-tabs" id="tabs-fases"></div>
+  <!-- Sticky search + phase tabs -->
+  <div class="sticky-filters-bar">
+    <div class="match-search-wrap">
+      <i class="bi bi-search match-search-icon"></i>
+      <input type="text" id="buscador-equipo" class="match-search-input" placeholder="Buscar equipo..." autocomplete="off" />
+      <button type="button" id="btn-clear-buscador" class="match-search-clear" style="display:none" aria-label="Limpiar búsqueda"><i class="bi bi-x-circle-fill"></i></button>
+    </div>
+
+    <div class="phase-tabs" id="tabs-fases"></div>
+  </div>
 
   <!-- Matches grid -->
   <div class="matches-grid" id="partidos-grid">
@@ -69,7 +105,7 @@
 
 <!-- ══ Match Detail Modal ══ -->
 <div class="modal fade" id="modalPartido" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
     <div class="modal-content match-modal-content">
 
       <!-- Hero: stadium photo -->
@@ -101,6 +137,11 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-equipos" type="button" role="tab">
               <i class="bi bi-people me-1"></i>Equipos
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-votos" type="button" role="tab" id="modal-tab-votos-btn">
+              <i class="bi bi-eye me-1"></i>Votos
             </button>
           </li>
         </ul>
@@ -139,6 +180,11 @@
         <!-- Tab 3: Equipos -->
         <div class="tab-pane fade" id="tab-equipos" role="tabpanel">
           <div class="modal-tab-equipos" id="modal-equipos-content"></div>
+        </div>
+
+        <!-- Tab 4: Votos -->
+        <div class="tab-pane fade" id="tab-votos" role="tabpanel">
+          <div class="modal-tab-votos" id="modal-votos-content"></div>
         </div>
 
       </div>
@@ -180,6 +226,7 @@
       <ul class="footer-links-list">
         <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
         <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
+        <li><a href="estadisticas.html"><i class="bi bi-bar-chart-line"></i> Estadísticas</a></li>
         <li><a href="perfil.html"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
       </ul>
     </div>

@@ -22,10 +22,33 @@
     #accordion-admin-partidos .accordion-button::after { filter: invert(1) brightness(1.5); }
     #accordion-admin-partidos .accordion-button:not(.collapsed) { background: rgba(245,184,0,.04) !important; }
     #accordion-admin-partidos .accordion-button:focus { box-shadow: none !important; }
+    #accordion-usuarios .accordion-button,
+    #accordion-usuarios .accordion-button.collapsed,
+    #accordion-usuarios .accordion-body,
+    #accordion-usuarios .accordion-body td,
+    #accordion-usuarios .accordion-body tr {
+      color: #e8eef7 !important;
+    }
+    #accordion-usuarios .accordion-button::after { filter: invert(1) brightness(1.5); }
+    #accordion-usuarios .accordion-item { border: 1px solid rgba(255,255,255,.1) !important; }
+    #accordion-auditoria .accordion-button,
+    #accordion-auditoria .accordion-button.collapsed,
+    #accordion-auditoria .accordion-body,
+    #accordion-auditoria .accordion-body td,
+    #accordion-auditoria .accordion-body tr {
+      color: #e8eef7 !important;
+    }
+    #accordion-auditoria .accordion-button::after { filter: invert(1) brightness(1.5); }
+    #accordion-auditoria .accordion-item { border: 1px solid rgba(255,255,255,.1) !important; }
     .admin-filter-bar { display:flex; gap:.55rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
     .admin-filter-bar .input-group-text { background:var(--input-bg); border-color:rgba(255,255,255,.1); color:var(--text-sub); }
     .admin-filter-bar .form-control,
     .admin-filter-bar .form-select { max-width:100%; }
+    .admin-filter-bar .form-control:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset !important;
+      -webkit-text-fill-color: #e8eef7 !important;
+      caret-color: #e8eef7;
+    }
 
     .btn-res-opcion {
       padding: .65rem .5rem;
@@ -140,6 +163,7 @@
           <label class="form-label"><i class="bi bi-diagram-3 me-1"></i>Fase</label>
           <select id="fase-partido" class="form-select">
             <option>Grupos</option>
+            <option>Dieciseisavos</option>
             <option>Octavos</option>
             <option>Cuartos</option>
             <option>Semifinal</option>
@@ -213,20 +237,47 @@
           </select>
         </div>
 
-        <label class="form-label mb-2">Resultado del partido</label>
-        <div class="d-flex gap-2 mb-4" id="res-opciones">
-          <button type="button" class="btn-res-opcion flex-fill" data-val="L" id="res-btn-L">
-            <i class="bi bi-shield-fill-check me-1"></i>Local gana
-          </button>
-          <button type="button" class="btn-res-opcion flex-fill" data-val="E" id="res-btn-E">
-            <i class="bi bi-dash-lg me-1"></i>Empate
-          </button>
-          <button type="button" class="btn-res-opcion flex-fill" data-val="V" id="res-btn-V">
-            <i class="bi bi-shield-fill-check me-1"></i>Visita gana
-          </button>
+        <!-- L/E/V (Grupos / Dieciseisavos / Octavos) -->
+        <div id="res-lev-area">
+          <label class="form-label mb-2">Resultado del partido</label>
+          <div class="d-flex gap-2 mb-4" id="res-opciones">
+            <button type="button" class="btn-res-opcion flex-fill" data-val="L" id="res-btn-L">
+              <i class="bi bi-shield-fill-check me-1"></i>Local gana
+            </button>
+            <button type="button" class="btn-res-opcion flex-fill" data-val="E" id="res-btn-E">
+              <i class="bi bi-dash-lg me-1"></i>Empate
+            </button>
+            <button type="button" class="btn-res-opcion flex-fill" data-val="V" id="res-btn-V">
+              <i class="bi bi-shield-fill-check me-1"></i>Visita gana
+            </button>
+          </div>
         </div>
 
-        <button class="btn-fifa-gold w-100 py-2" id="btn-resultado">
+        <!-- Marcador exacto (Cuartos / Semifinal / Tercer puesto / Final) -->
+        <div id="res-exacto-area" style="display:none">
+          <label class="form-label mb-2"><i class="bi bi-pencil-square me-1"></i>Marcador al 90 min / alargue</label>
+          <div class="exacto-score-row mb-3">
+            <span id="res-flag-local" style="font-size:1.4rem"></span>
+            <span id="res-name-local" style="font-size:.8rem;color:var(--text-sub);max-width:70px;text-align:center;line-height:1.1"></span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="exacto-input" id="res-gl" placeholder="0">
+            <span class="exacto-sep">–</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="exacto-input" id="res-gv" placeholder="0">
+            <span id="res-name-visita" style="font-size:.8rem;color:var(--text-sub);max-width:70px;text-align:center;line-height:1.1"></span>
+            <span id="res-flag-visita" style="font-size:1.4rem"></span>
+          </div>
+          <label class="pen-toggle-label mb-2">
+            <input type="checkbox" id="res-fue-penales">
+            <span>¿El partido fue a penales?</span>
+          </label>
+          <div id="res-penales-who" style="display:none;margin-top:.5rem">
+            <label class="form-label mb-1">¿Quién avanzó en penales?</label>
+            <select class="form-select" id="res-ganador-penales">
+              <option value="">— Selecciona el equipo —</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-fifa-gold w-100 py-2 mt-2" id="btn-resultado">
           <i class="bi bi-check2-circle me-1"></i> Registrar resultado
         </button>
         <div id="msg-resultado" class="mt-2"></div>
@@ -255,6 +306,56 @@
           </div>
         </div>
         <div id="msg-campeon" class="mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Definir 2do lugar real -->
+    <div class="col-12">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <i class="bi bi-award-fill" style="color:var(--gold)"></i> Definir 2do lugar del mundial
+        </div>
+        <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:1.25rem">
+          Al confirmar el subcampeón real, el sistema asignará automáticamente
+          <strong style="color:var(--gold)">3 puntos</strong> a todos los usuarios que acertaron.
+        </p>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-8">
+            <label class="form-label">2do lugar real del mundial</label>
+            <input type="text" id="segundo-real" class="form-control" placeholder="ej: 🇫🇷 Francia" />
+          </div>
+          <div class="col-sm-4">
+            <button class="btn-fifa-gold w-100 py-2" id="btn-segundo-real">
+              <i class="bi bi-award me-1"></i> Confirmar 2do lugar
+            </button>
+          </div>
+        </div>
+        <div id="msg-segundo" class="mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Definir 3er lugar real -->
+    <div class="col-12">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <i class="bi bi-award-fill" style="color:var(--gold)"></i> Definir 3er lugar del mundial
+        </div>
+        <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:1.25rem">
+          Al confirmar el tercer lugar real, el sistema asignará automáticamente
+          <strong style="color:var(--gold)">2 puntos</strong> a todos los usuarios que acertaron.
+        </p>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-8">
+            <label class="form-label">3er lugar real del mundial</label>
+            <input type="text" id="tercero-real" class="form-control" placeholder="ej: 🇭🇷 Croacia" />
+          </div>
+          <div class="col-sm-4">
+            <button class="btn-fifa-gold w-100 py-2" id="btn-tercero-real">
+              <i class="bi bi-award me-1"></i> Confirmar 3er lugar
+            </button>
+          </div>
+        </div>
+        <div id="msg-tercero" class="mt-2"></div>
       </div>
     </div>
 
@@ -287,6 +388,7 @@
         <option>Grupo J</option>
         <option>Grupo K</option>
         <option>Grupo L</option>
+        <option>Dieciseisavos</option>
         <option>Octavos</option>
         <option>Cuartos</option>
         <option>Semifinal</option>
@@ -323,6 +425,18 @@
         <i class="bi bi-person-plus-fill me-1"></i> Nuevo usuario
       </button>
     </div>
+    <div class="admin-filter-bar">
+      <div class="input-group" style="max-width:280px;flex:1;min-width:150px">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="search" id="filtro-usuario" name="q" class="form-control" placeholder="Buscar nombre o correo…" autocomplete="off" />
+      </div>
+      <button class="btn-fifa-outline" id="btn-expand-all-usuarios" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-expand me-1"></i>Expandir
+      </button>
+      <button class="btn-fifa-outline" id="btn-collapse-all-usuarios" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-collapse me-1"></i>Colapsar
+      </button>
+    </div>
     <div id="lista-usuarios">
       <div class="empty-state">
         <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
@@ -333,12 +447,17 @@
 
   <!-- Votos registrados -->
   <div class="mt-5">
-    <div class="admin-card-title mb-3" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
-      <span><i class="bi bi-check2-circle" style="color:var(--gold)"></i> Votos registrados</span>
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <div class="admin-card-title mb-0">
+        <i class="bi bi-check2-circle" style="color:var(--gold)"></i> Votos registrados
+      </div>
       <button class="btn-danger-sm" id="btn-reset-apuestas" style="padding:.45rem 1rem;font-size:.83rem">
         <i class="bi bi-trash me-1"></i> Borrar historial de votos
       </button>
     </div>
+    <p style="color:var(--text-sub);font-size:.85rem;margin-top:-.5rem;margin-bottom:1rem">
+      Los votos de partidos ya finalizados se pueden editar o agregar hasta 7 días después de finalizados (para casos justificados); pasado ese plazo quedan bloqueados.
+    </p>
     <div id="lista-votos">
       <div class="empty-state">
         <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
@@ -359,6 +478,30 @@
       <button class="btn-danger-sm" id="btn-borrar-chat" style="padding:.5rem 1.1rem;font-size:.88rem">
         <i class="bi bi-trash me-1"></i> Borrar historial del chat
       </button>
+    </div>
+  </div>
+
+  <!-- Auditoría de admin -->
+  <div class="mt-5">
+    <div class="admin-card-title mb-3">
+      <i class="bi bi-shield-lock-fill" style="color:var(--gold)"></i> Auditoría de cambios de admin
+    </div>
+    <p style="color:var(--text-sub);font-size:.85rem;margin-top:-.5rem;margin-bottom:1rem">
+      Registro de cada voto editado o resultado modificado por un administrador, para transparencia.
+    </p>
+    <div class="admin-filter-bar" style="justify-content:flex-end">
+      <button class="btn-fifa-outline" id="btn-expand-all-auditoria" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-expand me-1"></i>Expandir
+      </button>
+      <button class="btn-fifa-outline" id="btn-collapse-all-auditoria" style="padding:.42rem .9rem;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-arrows-collapse me-1"></i>Colapsar
+      </button>
+    </div>
+    <div id="lista-auditoria">
+      <div class="empty-state">
+        <span class="spinner-wc" style="width:2rem;height:2rem;border-width:3px"></span>
+        <h3 style="margin-top:1rem">Cargando...</h3>
+      </div>
     </div>
   </div>
 
@@ -408,6 +551,7 @@
           <label class="form-label"><i class="bi bi-diagram-3 me-1"></i>Fase</label>
           <select id="edit-fase" class="form-select">
             <option>Grupos</option>
+            <option>Dieciseisavos</option>
             <option>Octavos</option>
             <option>Cuartos</option>
             <option>Semifinal</option>
@@ -553,6 +697,42 @@
   </div>
 </div>
 
+<!-- ══ MODAL VOTO ADMIN ══ -->
+<div class="modal fade" id="modal-voto-admin" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-pencil-fill me-2"></i><span id="modal-voto-titulo">Editar voto</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-voto-info" style="margin-bottom:1rem;padding:.6rem .8rem;background:rgba(255,255,255,.04);border-radius:8px;font-size:.85rem;color:var(--text-sub)"></div>
+        <div id="modal-voto-partido-wrap" style="margin-bottom:1rem">
+          <label class="form-label"><i class="bi bi-controller me-1"></i>Partido</label>
+          <select id="modal-voto-partido" class="form-select">
+            <option value="">— Selecciona un partido —</option>
+          </select>
+        </div>
+        <label class="form-label">Predicción</label>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn-res-opcion flex-fill" id="voto-btn-L"><i class="bi bi-shield-fill-check me-1"></i>Local gana</button>
+          <button type="button" class="btn-res-opcion flex-fill" id="voto-btn-E"><i class="bi bi-dash-lg me-1"></i>Empate</button>
+          <button type="button" class="btn-res-opcion flex-fill" id="voto-btn-V"><i class="bi bi-shield-fill-check me-1"></i>Visita gana</button>
+        </div>
+        <div id="msg-voto-admin" class="mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-fifa-outline" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn-fifa-gold" id="btn-guardar-voto">
+          <i class="bi bi-floppy me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -597,6 +777,7 @@
       <ul class="footer-links-list">
         <li><a href="index.html"><i class="bi bi-controller"></i> Mis Apuestas</a></li>
         <li><a href="ranking.html"><i class="bi bi-trophy"></i> Tabla de posiciones</a></li>
+        <li><a href="estadisticas.html"><i class="bi bi-bar-chart-line"></i> Estadísticas</a></li>
         <li><a href="perfil.html"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
       </ul>
     </div>

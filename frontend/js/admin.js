@@ -91,7 +91,7 @@ function renderListaPartidos() {
   ];
   
   
-  const PHASE_ORDER = ["Octavos","Cuartos","Semifinal","Tercer puesto","Final"];
+  const PHASE_ORDER = ["Dieciseisavos","Octavos","Cuartos","Semifinal","Tercer puesto","Final"];
 
   
   
@@ -178,12 +178,23 @@ function syncGrupoVisibility(faseId, wrapId) {
     document.getElementById(faseId).value === "Grupos" ? "" : "none";
 }
 
+// Desde Dieciseisavos en adelante el partido siempre tiene un ganador (alargue/penales),
+// así que "Empate" deja de ser una opción válida de resultado o de apuesta.
+function _syncEmpateBtn(prefix, fase) {
+  const btn = document.getElementById(`${prefix}-btn-E`);
+  if (!btn) return;
+  btn.style.display = fase === "Grupos" ? "" : "none";
+}
+
 document.getElementById("fase-partido").addEventListener("change", () =>
   syncGrupoVisibility("fase-partido", "wrap-grupo-crear")
 );
-document.getElementById("edit-fase").addEventListener("change", () =>
-  syncGrupoVisibility("edit-fase", "wrap-grupo-editar")
-);
+document.getElementById("edit-fase").addEventListener("change", () => {
+  syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
+  const fase = document.getElementById("edit-fase").value;
+  _syncEmpateBtn("edit-res", fase);
+  if (fase !== "Grupos" && _editResSeleccionado === "E") _setEditResultado("");
+});
 syncGrupoVisibility("fase-partido", "wrap-grupo-crear");
 
 // ── IMAGEN ESTADIO ────────────────────────────────────────────
@@ -339,6 +350,27 @@ document.addEventListener("DOMContentLoaded", () => {
       bootstrap.Collapse.getOrCreateInstance(el).hide();
     });
   });
+
+  _modalVoto = new bootstrap.Modal(document.getElementById("modal-voto-admin"));
+  ["L", "E", "V"].forEach(v => {
+    document.getElementById(`voto-btn-${v}`).addEventListener("click", () => {
+      _votoPred = v;
+      ["L", "E", "V"].forEach(b => {
+        document.getElementById(`voto-btn-${b}`).className =
+          `btn-res-opcion flex-fill${b === v ? ` active-${v}` : ""}`;
+      });
+    });
+  });
+  document.getElementById("btn-guardar-voto").addEventListener("click", guardarVotoAdmin);
+
+  document.getElementById("modal-voto-partido").addEventListener("change", () => {
+    const p = partidos.find(x => x.id === parseInt(document.getElementById("modal-voto-partido").value));
+    _syncEmpateBtn("voto", p ? p.fase : "Grupos");
+    if ((!p || p.fase !== "Grupos") && _votoPred === "E") {
+      _votoPred = "";
+      ["L", "E", "V"].forEach(v => document.getElementById(`voto-btn-${v}`).className = "btn-res-opcion flex-fill");
+    }
+  });
 });
 
 function abrirEditar(id) {
@@ -384,6 +416,7 @@ function abrirEditar(id) {
     const gv = p.goles_visita ?? 0;
     initRes = gl > gv ? "L" : gv > gl ? "V" : "E";
   }
+  _syncEmpateBtn("edit-res", p.fase);
   _setEditResultado(initRes);
 
   syncGrupoVisibility("edit-fase", "wrap-grupo-editar");
@@ -413,7 +446,7 @@ document.getElementById("btn-guardar-editar").addEventListener("click", async ()
 
   const finalizado = document.getElementById("edit-finalizado").checked;
   if (finalizado && !_editResSeleccionado) {
-    msgErr("msg-editar", "Selecciona un resultado (Local gana / Empate / Visita gana)");
+    msgErr("msg-editar", fase === "Grupos" ? "Selecciona un resultado (Local gana / Empate / Visita gana)" : "Selecciona un resultado (Local gana / Visita gana)");
     return;
   }
   const golesLocal  = _editResSeleccionado === "L" ? 1 : 0;
@@ -494,7 +527,43 @@ function _setupResBtns(prefix, onSelect) {
   });
 }
 
+const FASES_EXACTO_ADMIN = new Set(["Cuartos", "Semifinal", "Final", "Tercer puesto"]);
+
 _setupResBtns("res", val => { _resSeleccionado = val; });
+
+document.getElementById("sel-partido").addEventListener("change", () => {
+  const p = partidos.find(x => x.id === parseInt(document.getElementById("sel-partido").value));
+  const fase = p ? p.fase : "Grupos";
+  const esExacto = FASES_EXACTO_ADMIN.has(fase);
+
+  document.getElementById("res-lev-area").style.display    = esExacto ? "none" : "";
+  document.getElementById("res-exacto-area").style.display = esExacto ? "" : "none";
+
+  if (esExacto && p) {
+    document.getElementById("res-flag-local").textContent   = p.bandera_local;
+    document.getElementById("res-name-local").textContent   = p.equipo_local;
+    document.getElementById("res-flag-visita").textContent  = p.bandera_visita;
+    document.getElementById("res-name-visita").textContent  = p.equipo_visita;
+    document.getElementById("res-gl").value = "";
+    document.getElementById("res-gv").value = "";
+    document.getElementById("res-fue-penales").checked = false;
+    document.getElementById("res-penales-who").style.display = "none";
+    const sel = document.getElementById("res-ganador-penales");
+    sel.innerHTML = `<option value="">— Selecciona el equipo —</option>
+      <option value="${escHtml(p.equipo_local)}">${p.bandera_local} ${escHtml(p.equipo_local)}</option>
+      <option value="${escHtml(p.equipo_visita)}">${p.bandera_visita} ${escHtml(p.equipo_visita)}</option>`;
+  } else {
+    _syncEmpateBtn("res", fase);
+    if (fase !== "Grupos" && _resSeleccionado === "E") {
+      _resSeleccionado = "";
+      ["L", "E", "V"].forEach(v => document.getElementById(`res-btn-${v}`).className = "btn-res-opcion flex-fill");
+    }
+  }
+});
+
+document.getElementById("res-fue-penales").addEventListener("change", e => {
+  document.getElementById("res-penales-who").style.display = e.target.checked ? "" : "none";
+});
 
 let _editResSeleccionado = "";
 
@@ -510,32 +579,41 @@ _setupResBtns("edit-res", val => { _setEditResultado(val); });
 
 document.getElementById("btn-resultado").addEventListener("click", async () => {
   const idPartido = document.getElementById("sel-partido").value;
+  if (!idPartido) { msgErr("msg-resultado", "Selecciona un partido"); return; }
 
-  if (!idPartido) {
-    msgErr("msg-resultado", "Selecciona un partido");
-    return;
-  }
-  if (!_resSeleccionado) {
-    msgErr("msg-resultado", "Selecciona un resultado (Local gana / Empate / Visita gana)");
-    return;
-  }
-  const resTextos = { L: "Local gana", E: "Empate", V: "Visita gana" };
-  if (!confirm(`¿Confirmas que el resultado es "${resTextos[_resSeleccionado]}"?\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+  const p = partidos.find(x => x.id === parseInt(idPartido));
+  const esExacto = p && FASES_EXACTO_ADMIN.has(p.fase);
+  let body;
 
-  const gl = _resSeleccionado === "L" ? 1 : 0;
-  const gv = _resSeleccionado === "V" ? 1 : 0;
+  if (esExacto) {
+    const gl = parseInt(document.getElementById("res-gl").value ?? "");
+    const gv = parseInt(document.getElementById("res-gv").value ?? "");
+    if (isNaN(gl) || isNaN(gv)) { msgErr("msg-resultado", "Ingresa el marcador exacto"); return; }
+    const fuePenales = document.getElementById("res-fue-penales").checked;
+    const ganadorPen = document.getElementById("res-ganador-penales").value;
+    if (fuePenales && !ganadorPen) { msgErr("msg-resultado", "Indica qué equipo avanzó en penales"); return; }
+    if (gl === gv && !fuePenales) { msgErr("msg-resultado", "Marcador empatado: marca '¿Fue a penales?' e indica el ganador"); return; }
+    const resumen = `${gl}-${gv}${fuePenales ? ` (pens: ${ganadorPen})` : ""}`;
+    if (!confirm(`¿Confirmas el resultado ${resumen}?\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+    body = { goles_local: gl, goles_visita: gv, fue_penales: fuePenales, equipo_ganador_penales: ganadorPen || null };
+  } else {
+    if (!_resSeleccionado) {
+      msgErr("msg-resultado", p && p.fase !== "Grupos" ? "Selecciona un resultado (Local gana / Visita gana)" : "Selecciona un resultado (Local gana / Empate / Visita gana)");
+      return;
+    }
+    const resTextos = { L: "Local gana", E: "Empate", V: "Visita gana" };
+    if (!confirm(`¿Confirmas que el resultado es "${resTextos[_resSeleccionado]}"?\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+    const gl = _resSeleccionado === "L" ? 1 : 0;
+    const gv = _resSeleccionado === "V" ? 1 : 0;
+    body = { goles_local: gl, goles_visita: gv };
+  }
 
   try {
     const res = await fetch(`${API}/admin/resultado/${idPartido}`, {
-      method:  "PUT",
-      headers: headers(),
-      body:    JSON.stringify({ goles_local: gl, goles_visita: gv }),
+      method: "PUT", headers: headers(), body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) {
-      msgErr("msg-resultado", data.error);
-      return;
-    }
+    if (!res.ok) { msgErr("msg-resultado", data.error); return; }
     msgOk("msg-resultado", "Resultado ingresado y puntos calculados");
     toast("✅ Resultado registrado");
     _resSeleccionado = "";
@@ -548,38 +626,54 @@ document.getElementById("btn-resultado").addEventListener("click", async () => {
   }
 });
 
-// ── CAMPEÓN REAL ──────────────────────────────────────────────
-document.getElementById("btn-campeon-real").addEventListener("click", async () => {
-  const campeon = document.getElementById("campeon-real").value.trim();
-  if (!campeon) {
-    msgErr("msg-campeon", "Ingresa el nombre del campeón");
-    return;
-  }
-  if (!confirm(`¿Confirmas que el campeón es "${campeon}"?\nSe asignarán 5 puntos a quienes lo acertaron.`)) return;
-
-  try {
-    const res = await fetch(`${API}/admin/campeon-real`, {
-      method:  "PUT",
-      headers: headers(),
-      body:    JSON.stringify({ campeon }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      msgErr("msg-campeon", data.error);
+// ── PODIO REAL (campeón / 2do / 3er lugar) ─────────────────────
+function _setupPodioReal({ inputId, btnId, msgId, endpoint, body, etiqueta, puntos, toastIcono }) {
+  document.getElementById(btnId).addEventListener("click", async () => {
+    const valor = document.getElementById(inputId).value.trim();
+    if (!valor) {
+      msgErr(msgId, `Ingresa el nombre del ${etiqueta}`);
       return;
     }
-    msgOk("msg-campeon", data.mensaje);
-    toast("🏆 Campeón registrado");
-  } catch (_) {
-    msgErr("msg-campeon", "Error de conexión");
-  }
+    if (!confirm(`¿Confirmas que el ${etiqueta} es "${valor}"?\nSe asignarán ${puntos} puntos a quienes lo acertaron.`)) return;
+
+    try {
+      const res = await fetch(`${API}${endpoint}`, {
+        method:  "PUT",
+        headers: headers(),
+        body:    JSON.stringify({ [body]: valor }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgErr(msgId, data.error);
+        return;
+      }
+      msgOk(msgId, data.mensaje);
+      toast(`${toastIcono} ${etiqueta[0].toUpperCase()}${etiqueta.slice(1)} registrado`);
+    } catch (_) {
+      msgErr(msgId, "Error de conexión");
+    }
+  });
+}
+
+_setupPodioReal({
+  inputId: "campeon-real", btnId: "btn-campeon-real", msgId: "msg-campeon",
+  endpoint: "/admin/campeon-real", body: "campeon", etiqueta: "campeón", puntos: 5, toastIcono: "🏆",
+});
+_setupPodioReal({
+  inputId: "segundo-real", btnId: "btn-segundo-real", msgId: "msg-segundo",
+  endpoint: "/admin/segundo-real", body: "equipo", etiqueta: "2do lugar", puntos: 3, toastIcono: "🥈",
+});
+_setupPodioReal({
+  inputId: "tercero-real", btnId: "btn-tercero-real", msgId: "msg-tercero",
+  endpoint: "/admin/tercero-real", body: "equipo", etiqueta: "3er lugar", puntos: 2, toastIcono: "🥉",
 });
 
 cargarPartidos();
 
 // ── USUARIOS ──────────────────────────────────────────────────
 let modalUsuario;
-let usuariosCache = [];
+let usuariosCache       = [];
+let filtroUsuarioTexto  = "";
 
 document.getElementById("btn-toggle-usuario-pw").addEventListener("click", () => {
   const inp  = document.getElementById("usuario-password");
@@ -604,42 +698,86 @@ async function cargarUsuarios() {
   }
 }
 
+function _filaUsuario(u, ME) {
+  const avatarHtml = u.foto_perfil
+    ? `<img src="${u.foto_perfil}" alt="${u.nombre}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" />`
+    : `<span style="width:38px;height:38px;border-radius:50%;background:rgba(245,184,0,.15);border:2px solid rgba(245,184,0,.3);display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem"><i class="bi bi-person-fill"></i></span>`;
+  const rolBadge = u.rol === "admin"
+    ? `<span style="background:rgba(245,184,0,.18);color:var(--gold);border:1px solid rgba(245,184,0,.35);border-radius:4px;padding:.15rem .55rem;font-size:.72rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.5px">ADMIN</span>`
+    : `<span style="background:rgba(255,255,255,.07);color:var(--text-sub);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:.15rem .55rem;font-size:.72rem">usuario</span>`;
+  const esSelf = u.id === ME
+    ? `<span style="font-size:.7rem;color:var(--text-sub);margin-left:.4rem">(tú)</span>`
+    : "";
+  return `<tr>
+    <td style="width:48px">${avatarHtml}</td>
+    <td>${escHtml(u.nombre)}${esSelf}</td>
+    <td style="color:var(--text-sub);font-size:.85rem">${escHtml(u.email)}</td>
+    <td>${rolBadge}</td>
+    <td>
+      <button class="action-btn action-btn-edit me-1" onclick="abrirEditarUsuario(${u.id})" title="Editar usuario"><i class="bi bi-pencil-fill"></i></button>
+      <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id})" title="Eliminar usuario"
+        ${u.id === ME ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}><i class="bi bi-trash-fill"></i></button>
+    </td>
+  </tr>`;
+}
+
 function renderTablaUsuarios(usuarios) {
+  const cont = document.getElementById("lista-usuarios");
   if (!usuarios.length) {
-    document.getElementById("lista-usuarios").innerHTML =
-      '<div class="empty-state"><span class="empty-icon">👤</span><h3>No hay usuarios registrados</h3></div>';
+    cont.innerHTML = '<div class="empty-state"><span class="empty-icon">👤</span><h3>No hay usuarios registrados</h3></div>';
     return;
   }
+
   const ME = parseInt(localStorage.getItem("id") || "0");
-  const filas = usuarios.map(u => {
-    const avatarHtml = u.foto_perfil
-      ? `<img src="${u.foto_perfil}" alt="${u.nombre}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" />`
-      : `<span style="width:38px;height:38px;border-radius:50%;background:rgba(245,184,0,.15);border:2px solid rgba(245,184,0,.3);display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem"><i class="bi bi-person-fill"></i></span>`;
-    const rolBadge = u.rol === "admin"
-      ? `<span style="background:rgba(245,184,0,.18);color:var(--gold);border:1px solid rgba(245,184,0,.35);border-radius:4px;padding:.15rem .55rem;font-size:.72rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.5px">ADMIN</span>`
-      : `<span style="background:rgba(255,255,255,.07);color:var(--text-sub);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:.15rem .55rem;font-size:.72rem">usuario</span>`;
-    const esSelf = u.id === ME
-      ? `<span style="font-size:.7rem;color:var(--text-sub);margin-left:.4rem">(tú)</span>`
-      : "";
-    return `<tr>
-      <td style="width:48px">${avatarHtml}</td>
-      <td>${escHtml(u.nombre)}${esSelf}</td>
-      <td style="color:var(--text-sub);font-size:.85rem">${escHtml(u.email)}</td>
-      <td>${rolBadge}</td>
-      <td>
-        <button class="action-btn action-btn-edit me-1" onclick="abrirEditarUsuario(${u.id})" title="Editar usuario"><i class="bi bi-pencil-fill"></i></button>
-        <button class="action-btn action-btn-delete" onclick="eliminarUsuario(${u.id})" title="Eliminar usuario"
-          ${u.id === ME ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}><i class="bi bi-trash-fill"></i></button>
-      </td>
-    </tr>`;
+  const q  = filtroUsuarioTexto.toLowerCase();
+  const filtrados = usuarios.filter(u =>
+    !q || u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+  );
+
+  if (!filtrados.length) {
+    cont.innerHTML = '<div class="empty-state" style="padding:2rem 1rem"><span class="empty-icon">🔍</span><h3>Sin resultados</h3><p>Modifica la búsqueda para ver usuarios.</p></div>';
+    return;
+  }
+
+  const GRUPOS = [
+    { rol: "admin",   titulo: "Administradores", icono: "shield-fill-check" },
+    { rol: "usuario", titulo: "Usuarios",         icono: "person-fill" },
+  ];
+  const expandAll = !!q;
+
+  let renderedIdx = 0;
+  const items = GRUPOS.map(g => {
+    const us = filtrados.filter(u => u.rol === g.rol);
+    if (!us.length) return "";
+    const expanded    = renderedIdx++ === 0 || expandAll;
+    const collapseId  = `cusuarios-${g.rol}`;
+    const filas       = us.map(u => _filaUsuario(u, ME)).join("");
+
+    return `
+      <div class="accordion-item" style="background:var(--card-bg);border:1px solid rgba(255,255,255,.08)!important;border-radius:10px!important;margin-bottom:.5rem;overflow:hidden">
+        <h2 class="accordion-header">
+          <button class="accordion-button ${expanded ? "" : "collapsed"}" type="button"
+            data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+            style="background:var(--card-bg);color:#e8eef7;box-shadow:none;padding:.75rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.5px">
+            <i class="bi bi-${g.icono}" style="color:var(--gold);font-size:.85rem"></i>
+            ${g.titulo}
+            <span style="font-family:system-ui,sans-serif;font-size:.7rem;font-weight:400;color:var(--text-sub);margin-left:.3rem">${us.length} usuario${us.length !== 1 ? "s" : ""}</span>
+          </button>
+        </h2>
+        <div id="${collapseId}" class="accordion-collapse collapse ${expanded ? "show" : ""}">
+          <div class="accordion-body" style="padding:.6rem;background:rgba(0,0,0,.12)">
+            <div style="overflow-x:auto">
+              <table class="ranking-table" style="margin:0">
+                <thead><tr><th></th><th>Nombre</th><th>Email</th><th>Rol</th><th style="text-align:center">Acciones</th></tr></thead>
+                <tbody>${filas}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`;
   }).join("");
-  document.getElementById("lista-usuarios").innerHTML = `
-    <div class="ranking-card"><div style="overflow-x:auto">
-      <table class="ranking-table">
-        <thead><tr><th></th><th>Nombre</th><th>Email</th><th>Rol</th><th style="text-align:center">Acciones</th></tr></thead>
-        <tbody>${filas}</tbody>
-      </table>
-    </div></div>`;
+
+  cont.innerHTML = `<div class="accordion" id="accordion-usuarios">${items}</div>`;
 }
 
 
@@ -749,13 +887,128 @@ async function eliminarUsuario(id) {
   }
 }
 
+// ── Filtro y expandir/colapsar usuarios ─────────────────────────
+// El navegador puede restaurar el valor anterior del input al recargar (F5)
+// aunque tenga autocomplete="off"; se fuerza vacío para que siempre arranque limpio.
+document.getElementById("filtro-usuario").value = "";
+document.getElementById("filtro-usuario").addEventListener("input", e => {
+  filtroUsuarioTexto = e.target.value.trim();
+  renderTablaUsuarios(usuariosCache);
+});
+
+document.getElementById("btn-expand-all-usuarios").addEventListener("click", () => {
+  document.querySelectorAll("#accordion-usuarios .accordion-collapse").forEach(el => {
+    bootstrap.Collapse.getOrCreateInstance(el).show();
+  });
+});
+
+document.getElementById("btn-collapse-all-usuarios").addEventListener("click", () => {
+  document.querySelectorAll("#accordion-usuarios .accordion-collapse").forEach(el => {
+    bootstrap.Collapse.getOrCreateInstance(el).hide();
+  });
+});
+
 cargarUsuarios();
 
-
-
-
 // ── VOTOS ─────────────────────────────────────────────────────
-let todosVotos = [];
+const VOTO_ADMIN_GRACIA_DIAS = 7;
+function _dentroPlazoEdicion(fechaStr) {
+  const limite = new Date(fechaStr).getTime() + VOTO_ADMIN_GRACIA_DIAS * 86400000;
+  return Date.now() <= limite;
+}
+
+let todosVotos     = [];
+let _renderedVotos = {};
+let _modalVoto     = null;
+let _votoUid       = null;
+let _votoPid       = null;
+let _votoPred      = "";
+
+function abrirVotoNuevo(uid) {
+  const data = _renderedVotos[uid];
+  if (!data) return;
+  _votoUid  = parseInt(uid);
+  _votoPid  = null;
+  _votoPred = "";
+  ["L", "E", "V"].forEach(v => {
+    document.getElementById(`voto-btn-${v}`).className = "btn-res-opcion flex-fill";
+  });
+  const votadosIds = new Set(data.votos.map(v => v.id_partido));
+  const sinVotar   = partidos.filter(p =>
+    !votadosIds.has(p.id) && (!p.finalizado || _dentroPlazoEdicion(p.fecha))
+  );
+  const sel = document.getElementById("modal-voto-partido");
+  sel.innerHTML = '<option value="">— Selecciona un partido —</option>';
+  if (!sinVotar.length) {
+    const opt = document.createElement("option");
+    opt.disabled = true;
+    opt.textContent = "No hay partidos pendientes sin votar";
+    sel.appendChild(opt);
+  }
+  sinVotar.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value       = p.id;
+    opt.textContent = `${p.bandera_local ?? ""} ${p.equipo_local} vs ${p.bandera_visita ?? ""} ${p.equipo_visita}${p.finalizado ? " (finalizado)" : ""}`;
+    sel.appendChild(opt);
+  });
+  _syncEmpateBtn("voto", "Grupos"); // se ajusta de nuevo al elegir un partido en el <select>
+  document.getElementById("modal-voto-partido-wrap").style.display = "";
+  document.getElementById("modal-voto-titulo").textContent = "Agregar voto";
+  document.getElementById("modal-voto-info").innerHTML =
+    `Usuario: <strong style="color:#e2e8f0">${escHtml(data.nombre)}</strong>`;
+  msgClear("msg-voto-admin");
+  _modalVoto.show();
+}
+
+function abrirVotoEditar(uid, idx) {
+  const data = _renderedVotos[uid];
+  if (!data) return;
+  const voto = data.votos[idx];
+  _votoUid  = parseInt(uid);
+  _votoPid  = voto.id_partido;
+  _votoPred = voto.prediccion || "";
+  _syncEmpateBtn("voto", voto.fase);
+  ["L", "E", "V"].forEach(v => {
+    document.getElementById(`voto-btn-${v}`).className =
+      `btn-res-opcion flex-fill${v === _votoPred ? ` active-${v}` : ""}`;
+  });
+  document.getElementById("modal-voto-partido-wrap").style.display = "none";
+  document.getElementById("modal-voto-titulo").textContent = "Editar voto";
+  document.getElementById("modal-voto-info").innerHTML =
+    `Usuario: <strong style="color:#e2e8f0">${escHtml(data.nombre)}</strong><br>` +
+    `Partido: <strong style="color:#e2e8f0">${escHtml(voto.equipo_local)} vs ${escHtml(voto.equipo_visita)}</strong>` +
+    (voto.finalizado
+      ? `<br><span style="color:var(--gold)"><i class="bi bi-flag-fill me-1"></i>Finalizado · resultado ${voto.resultado_local}-${voto.resultado_visita}</span>`
+      : "");
+  msgClear("msg-voto-admin");
+  _modalVoto.show();
+}
+
+async function guardarVotoAdmin() {
+  const pid = _votoPid ?? parseInt(document.getElementById("modal-voto-partido").value);
+  if (!pid) { msgErr("msg-voto-admin", "Selecciona un partido"); return; }
+  if (!_votoPred) { msgErr("msg-voto-admin", "Selecciona una predicción"); return; }
+  const btn = document.getElementById("btn-guardar-voto");
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner-wc"></span> Guardando...';
+  try {
+    const res = await fetch(`${API}/admin/apuesta`, {
+      method:  "PUT",
+      headers: headers(),
+      body:    JSON.stringify({ id_usuario: _votoUid, id_partido: pid, prediccion: _votoPred }),
+    });
+    const data = await res.json();
+    if (!res.ok) { msgErr("msg-voto-admin", data.error || "Error al guardar"); return; }
+    toast("✅ Voto guardado");
+    _modalVoto.hide();
+    cargarVotos();
+  } catch (_) {
+    msgErr("msg-voto-admin", "Error de conexión");
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
+  }
+}
 
 async function cargarVotos() {
   try {
@@ -792,16 +1045,22 @@ function renderVotos() {
 
 
 
+  _renderedVotos = {};
   const items = Object.entries(porUsuario).map(([uid, u], idx) => {
+    _renderedVotos[uid] = u;
     const totalVotos  = u.votos.length;
     const totalPts    = u.votos.reduce((s, v) => s + (v.puntos ?? 0), 0);
     const finalizados = u.votos.filter(v => v.finalizado).length;
     const pendientes  = totalVotos - finalizados;
+    const votadosIds  = new Set(u.votos.map(v => v.id_partido));
+    const sinVotar    = partidos.filter(p =>
+      !votadosIds.has(p.id) && (!p.finalizado || _dentroPlazoEdicion(p.fecha))
+    ).length;
 
-    const filas = u.votos.map(v => {
+    const filas = u.votos.map((v, vIdx) => {
       const pts = v.puntos ?? 0;
       const ptsHtml = v.finalizado
-        ? `<span class="pts-badge ${pts === 1 ? "pts-1" : "pts-0"}">${pts} pt</span>`
+        ? `<span class="pts-badge ${pts > 0 ? "pts-1" : "pts-0"}">${pts} pts</span>`
         : '<span style="color:var(--text-sub);font-size:.8rem">—</span>';
       const resultado = v.finalizado
         ? (() => {
@@ -824,6 +1083,11 @@ function renderVotos() {
         <td>${resultado}</td>
         <td style="text-align:center">${ptsHtml}</td>
         <td style="text-align:center;color:var(--text-sub);font-size:.8rem">${v.intentos}/2</td>
+        <td style="text-align:center">${!v.finalizado
+          ? `<button class="action-btn action-btn-edit" onclick="abrirVotoEditar('${uid}', ${vIdx})" title="Editar voto"><i class="bi bi-pencil-fill"></i></button>`
+          : _dentroPlazoEdicion(v.fecha)
+          ? `<button class="action-btn action-btn-edit" onclick="abrirVotoEditar('${uid}', ${vIdx})" title="Editar voto (partido finalizado, dentro del plazo de ${VOTO_ADMIN_GRACIA_DIAS} días)"><i class="bi bi-pencil-fill"></i></button>`
+          : `<button class="action-btn action-btn-edit" disabled title="No se puede editar: pasaron más de ${VOTO_ADMIN_GRACIA_DIAS} días desde que finalizó" style="opacity:.35;cursor:not-allowed"><i class="bi bi-lock-fill"></i></button>`}</td>
       </tr>`;
     }).join("");
 
@@ -857,9 +1121,14 @@ function renderVotos() {
           <div class="accordion-body" style="padding:.75rem 1rem 1rem;background:rgba(0,0,0,.15);color:var(--text)">
             <div style="overflow-x:auto">
               <table class="ranking-table" style="margin:0">
-                <thead><tr><th>Partido</th><th>Fecha</th><th>Predicción</th><th>Resultado</th><th style="text-align:center">Pts</th><th style="text-align:center">Intentos</th></tr></thead>
+                <thead><tr><th>Partido</th><th>Fecha</th><th>Predicción</th><th>Resultado</th><th style="text-align:center">Pts</th><th style="text-align:center">Intentos</th><th style="text-align:center"></th></tr></thead>
                 <tbody>${filas}</tbody>
               </table>
+            </div>
+            <div style="padding-top:.65rem;text-align:right">
+              <button class="btn-fifa-outline" style="font-size:.82rem;padding:.38rem .9rem" onclick="abrirVotoNuevo('${uid}')">
+                <i class="bi bi-plus-lg me-1"></i>Agregar voto${sinVotar > 0 ? ` (${sinVotar})` : ""}
+              </button>
             </div>
           </div>
         </div>
@@ -918,3 +1187,101 @@ document.getElementById("btn-borrar-chat").addEventListener("click", async () =>
     btn.innerHTML = '<i class="bi bi-trash me-1"></i> Borrar historial del chat';
   }
 });
+
+// ── Auditoría de admin ──────────────────────────────────────────
+async function cargarAuditoria() {
+  const cont = document.getElementById("lista-auditoria");
+  try {
+    const res  = await fetch(`${API}/admin/auditoria`, { headers: headers() });
+    const data = await res.json();
+    if (!res.ok) throw new Error();
+    if (!data.length) {
+      cont.innerHTML = '<div class="empty-state"><span class="empty-icon">🛡️</span><h3>Sin cambios registrados todavía</h3></div>';
+      return;
+    }
+    const accionLabels = {
+      editar_voto:      { txt: "Voto editado",          color: "#fbbf24" },
+      editar_resultado: { txt: "Resultado modificado",  color: "#f87171" },
+      anular_resultado: { txt: "Resultado anulado",     color: "#f87171" },
+    };
+
+    // Agrupar por día (America/Santiago); el backend ya ordena por creado_en DESC,
+    // así que el orden de inserción de las claves respeta los días más recientes primero.
+    const fechaKey = iso => new Date(iso).toLocaleDateString("es-CL", {
+      timeZone: "America/Santiago", day: "2-digit", month: "short", year: "numeric",
+    });
+    const buckets = {};
+    data.forEach(a => {
+      const key = fechaKey(a.creado_en);
+      if (!buckets[key]) buckets[key] = [];
+      buckets[key].push(a);
+    });
+
+    const items = Object.keys(buckets).map((key, idx) => {
+      const registros  = buckets[key];
+      const expanded    = idx === 0;
+      const collapseId  = `cauditoria-${idx}`;
+      const filas = registros.map(a => {
+        const tag = accionLabels[a.accion] || { txt: a.accion, color: "#7a91b3" };
+        return `<tr>
+          <td style="white-space:nowrap;color:var(--text-sub);font-size:.8rem">
+            ${new Date(a.creado_en).toLocaleString("es-CL",{timeZone:"America/Santiago",hour:"2-digit",minute:"2-digit"})}
+          </td>
+          <td style="white-space:nowrap">${escHtml(a.admin_nombre)}</td>
+          <td><span style="color:${tag.color};font-weight:600;font-size:.82rem">${tag.txt}</span></td>
+          <td style="color:#c8d4e0;font-size:.85rem">${escHtml(a.detalle)}</td>
+        </tr>`;
+      }).join("");
+
+      return `
+        <div class="accordion-item" style="background:var(--card-bg);border:1px solid rgba(255,255,255,.08)!important;border-radius:10px!important;margin-bottom:.5rem;overflow:hidden">
+          <h2 class="accordion-header">
+            <button class="accordion-button ${expanded ? "" : "collapsed"}" type="button"
+              data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+              style="background:var(--card-bg);color:#e8eef7;box-shadow:none;padding:.75rem 1.1rem;gap:.6rem;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.5px">
+              <i class="bi bi-calendar3" style="color:var(--gold);font-size:.85rem"></i>
+              ${key}
+              <span style="font-family:system-ui,sans-serif;font-size:.7rem;font-weight:400;color:var(--text-sub);margin-left:.3rem">${registros.length} cambio${registros.length !== 1 ? "s" : ""}</span>
+            </button>
+          </h2>
+          <div id="${collapseId}" class="accordion-collapse collapse ${expanded ? "show" : ""}">
+            <div class="accordion-body" style="padding:.6rem;background:rgba(0,0,0,.12)">
+              <div style="overflow-x:auto">
+                <table class="ranking-table" style="margin:0">
+                  <thead><tr><th>Hora</th><th>Admin</th><th>Acción</th><th>Detalle</th></tr></thead>
+                  <tbody>${filas}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+
+    cont.innerHTML = `<div class="accordion" id="accordion-auditoria">${items}</div>`;
+  } catch (_) {
+    cont.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span><h3>Error cargando auditoría</h3></div>';
+  }
+}
+
+document.getElementById("btn-expand-all-auditoria").addEventListener("click", () => {
+  document.querySelectorAll("#accordion-auditoria .accordion-collapse").forEach(el => {
+    bootstrap.Collapse.getOrCreateInstance(el).show();
+  });
+});
+
+document.getElementById("btn-collapse-all-auditoria").addEventListener("click", () => {
+  document.querySelectorAll("#accordion-auditoria .accordion-collapse").forEach(el => {
+    bootstrap.Collapse.getOrCreateInstance(el).hide();
+  });
+});
+
+cargarAuditoria();
+
+// Sanitize score inputs: digits only, clamped 0-20
+document.addEventListener("input", e => {
+  if (!e.target.matches(".exacto-input")) return;
+  const raw = e.target.value.replace(/\D/g, "");
+  const val = raw === "" ? "" : String(Math.min(20, parseInt(raw, 10)));
+  if (e.target.value !== val) e.target.value = val;
+});
+
