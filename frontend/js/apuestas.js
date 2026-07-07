@@ -46,7 +46,10 @@ function _actualizarPodioUI(controlsId, valor, intentos) {
     const sel = el.querySelector("select");
     if (sel) sel.value = valor;
     const btn = el.querySelector("button");
-    if (btn) btn.innerHTML = `<i class="bi bi-pencil me-1"></i> Cambiar`;
+    if (btn) {
+      btn.className = "btn-podio-cambiar";
+      btn.innerHTML = `<i class="bi bi-pencil me-1"></i> Cambiar`;
+    }
     // Insert attempt dots if not already there
     if (!el.querySelector(".attempt-dots")) {
       const dots = document.createElement("div");

@@ -181,6 +181,22 @@ body {
 .btn-fifa-campeon:active { transform: translateY(0); }
 .btn-fifa-campeon:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
+.btn-podio-cambiar {
+  font-size: .8rem;
+  padding: .32rem .75rem;
+  border-radius: 7px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #cbd5e1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .18s, border-color .18s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+.btn-podio-cambiar:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.35); color: #fff; }
+
 .btn-fifa-outline {
   background: transparent;
   color: var(--text-sub);
