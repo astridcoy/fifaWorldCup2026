@@ -3,13 +3,32 @@
 const selCampeon = document.getElementById("sel-campeon");
 const selSegundo = document.getElementById("sel-segundo");
 const selTercero = document.getElementById("sel-tercero");
-[selCampeon, selSegundo, selTercero].forEach(sel => {
-  EQUIPOS.forEach(eq => {
-    const opt = document.createElement("option");
-    opt.value = eq; opt.textContent = eq;
-    sel.appendChild(opt);
+
+function _llenarSelectPodio(equipos) {
+  [selCampeon, selSegundo, selTercero].forEach(sel => {
+    const prevVal = sel.value;
+    sel.innerHTML = '<option value="">— Elige un país —</option>';
+    equipos.forEach(eq => {
+      const opt = document.createElement("option");
+      opt.value = eq; opt.textContent = eq;
+      sel.appendChild(opt);
+    });
+    if (prevVal) sel.value = prevVal;
   });
-});
+}
+
+async function cargarEquiposActivos() {
+  try {
+    const res = await fetch(`${API}/equipos-activos`, { headers: headers() });
+    if (res.ok) {
+      const equipos = await res.json();
+      if (equipos.length > 0) { _llenarSelectPodio(equipos); return; }
+    }
+  } catch (_) {}
+  _llenarSelectPodio(EQUIPOS);
+}
+
+_llenarSelectPodio(EQUIPOS);
 
 function formatFecha(fechaStr) {
   return new Date(fechaStr).toLocaleDateString("es-CL", {
@@ -1167,4 +1186,4 @@ document.addEventListener("click", e => {
 })();
 
 cargarPartidos();
-cargarMiCampeon();
+cargarEquiposActivos().then(() => cargarMiCampeon());

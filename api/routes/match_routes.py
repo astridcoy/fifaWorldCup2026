@@ -284,6 +284,45 @@ def apostar_tercero():
     return _apostar_podio("tercer_lugar", equipo)
 
 
+@match_bp.route("/equipos-activos", methods=["GET"])
+@token_requerido
+def equipos_activos():
+    """Equipos aún vivos en el torneo (no eliminados en Cuartos/Semifinal)."""
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("""
+            WITH playoff_teams AS (
+                SELECT equipo_local  AS equipo, bandera_local  AS bandera
+                  FROM partidos WHERE fase IN ('Cuartos','Semifinal','Final','Tercer puesto')
+                UNION
+                SELECT equipo_visita AS equipo, bandera_visita AS bandera
+                  FROM partidos WHERE fase IN ('Cuartos','Semifinal','Final','Tercer puesto')
+            ),
+            eliminated AS (
+                SELECT CASE
+                    WHEN fue_penales AND equipo_ganador_penales IS NOT NULL THEN
+                        CASE WHEN equipo_ganador_penales = equipo_local
+                             THEN equipo_visita ELSE equipo_local END
+                    WHEN goles_local  > goles_visita THEN equipo_visita
+                    WHEN goles_visita > goles_local  THEN equipo_local
+                END AS equipo
+                FROM partidos
+                WHERE fase IN ('Cuartos','Semifinal') AND finalizado = TRUE
+            )
+            SELECT DISTINCT pt.bandera || ' ' || pt.equipo AS equipo
+            FROM playoff_teams pt
+            WHERE pt.equipo NOT IN (SELECT equipo FROM eliminated WHERE equipo IS NOT NULL)
+            ORDER BY equipo
+        """)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify([r["equipo"] for r in rows])
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
 @match_bp.route("/ranking", methods=["GET"])
 @token_requerido
 def ranking():
