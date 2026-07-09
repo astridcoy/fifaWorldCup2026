@@ -1062,18 +1062,40 @@ function renderVotos() {
       const ptsHtml = v.finalizado
         ? `<span class="pts-badge ${pts > 0 ? "pts-1" : "pts-0"}">${pts} pts</span>`
         : '<span style="color:var(--text-sub);font-size:.8rem">—</span>';
+      const esExacto = FASES_EXACTO_ADMIN.has(v.fase);
+
+      // Resultado real del partido
       const resultado = v.finalizado
         ? (() => {
             const gl = v.resultado_local, gv = v.resultado_visita;
+            if (esExacto) {
+              const cls = gl > gv ? "pred-L" : gv > gl ? "pred-V" : "pred-E";
+              let lbl = `${gl} - ${gv}`;
+              if (v.fue_penales && v.equipo_ganador_penales)
+                lbl += ` <span style="font-size:.72rem;opacity:.8">(pens: ${escHtml(v.equipo_ganador_penales)})</span>`;
+              return `<span class="pred-tag ${cls}">${lbl}</span>`;
+            }
             const lbl = gl > gv ? "Local gana" : gv > gl ? "Visita gana" : "Empate";
             const cls = gl > gv ? "pred-L"     : gv > gl ? "pred-V"      : "pred-E";
             return `<span class="pred-tag ${cls}">${lbl}</span>`;
           })()
         : '<span style="color:var(--text-sub);font-size:.8rem"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>';
-      const predLabels = { L: "Local gana", E: "Empate", V: "Visita gana" };
-      const predHtml = v.prediccion
-        ? `<span class="pred-tag pred-${v.prediccion}">${predLabels[v.prediccion] ?? v.prediccion}</span>`
-        : '<span style="color:var(--text-sub);font-size:.8rem">—</span>';
+
+      // Predicción del usuario
+      let predHtml;
+      if (esExacto && v.goles_local_apostado != null) {
+        const gla = v.goles_local_apostado, gva = v.goles_visita_apostado;
+        const cls  = gla > gva ? "pred-L" : gva > gla ? "pred-V" : "pred-E";
+        let lbl = `${gla} - ${gva}`;
+        if (v.predice_penales && v.equipo_penales_pred)
+          lbl += ` <span style="font-size:.72rem;opacity:.8">(pens: ${escHtml(v.equipo_penales_pred)})</span>`;
+        predHtml = `<span class="pred-tag ${cls}">${lbl}</span>`;
+      } else if (v.prediccion) {
+        const predLabels = { L: "Local gana", E: "Empate", V: "Visita gana" };
+        predHtml = `<span class="pred-tag pred-${v.prediccion}">${predLabels[v.prediccion] ?? v.prediccion}</span>`;
+      } else {
+        predHtml = '<span style="color:var(--text-sub);font-size:.8rem">—</span>';
+      }
       return `<tr>
         <td style="color:#e8eef7">${v.bandera_local ?? ""} ${escHtml(v.equipo_local)} <span style="color:var(--text-sub)">vs</span> ${v.bandera_visita ?? ""} ${escHtml(v.equipo_visita)}</td>
         <td style="color:var(--text-sub);font-size:.8rem;white-space:nowrap">

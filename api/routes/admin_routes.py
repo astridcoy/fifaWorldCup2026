@@ -1,24 +1,101 @@
 import threading
 import bcrypt
 import psycopg2
+from datetime import timedelta
 from flask import Blueprint, request, jsonify
-from database import get_db, row_as_dict
+from database import get_db, row_as_dict, chile_now
 from auth import solo_admin, token_requerido
-from constants import CHAMPION_POINTS
+from constants import (CHAMPION_POINTS, SECOND_POINTS, THIRD_POINTS, MATCH_POINTS,
+                       VOTO_ADMIN_GRACIA_DIAS, FASES_EXACTO, WINNER_POINTS, EXACT_POINTS, PENALTY_BONUS)
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
-def _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita):
-    cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
-    real = (
-        "L" if goles_local > goles_visita else
-        "V" if goles_visita > goles_local else
-        "E"
+def _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita,
+                            fase=None, fue_penales=False, equipo_ganador_penales=None):
+    """Calcula y graba puntos para todas las apuestas de un partido.
+
+    Fases clásicas (Grupos/Dieciseisavos/Octavos): L/E/V → MATCH_POINTS o 0.
+    Fases QF+ (Cuartos/Semifinal/Tercer puesto/Final): marcador exacto + bonus penales.
+      - Ganador correcto          → WINNER_POINTS  (2)
+      - Marcador 90-min exacto    → EXACT_POINTS   (6, incluye ganador)
+      - Predijo penales + equipo  → +PENALTY_BONUS (2)
+    """
+    if fase in FASES_EXACTO:
+        # Determinar ganador real
+        if goles_local > goles_visita:
+            ganador_real = "local"
+        elif goles_visita > goles_local:
+            ganador_real = "visita"
+        else:
+            ganador_real = "local" if equipo_ganador_penales and fue_penales else None
+
+        cur.execute("""
+            SELECT id, prediccion,
+                   goles_local_apostado, goles_visita_apostado,
+                   predice_penales, equipo_penales_pred
+              FROM apuestas WHERE id_partido = %s
+        """, (partido_id,))
+        for ap in cur.fetchall():
+            pts = 0
+            gl_ap = ap["goles_local_apostado"]
+            gv_ap = ap["goles_visita_apostado"]
+
+            # Derivar ganador apostado
+            if gl_ap is not None and gv_ap is not None:
+                if gl_ap > gv_ap:
+                    ganador_ap = "local"
+                elif gv_ap > gl_ap:
+                    ganador_ap = "visita"
+                else:
+                    # empate en marcador → el ganador viene del equipo de penales apostado
+                    cur.execute(
+                        "SELECT equipo_local FROM partidos WHERE id = %s", (partido_id,)
+                    )
+                    eq_local = cur.fetchone()["equipo_local"]
+                    ganador_ap = "local" if ap["equipo_penales_pred"] == eq_local else "visita"
+            else:
+                # Apuesta vieja sin marcador exacto (solo prediccion L/V)
+                ganador_ap = "local" if ap["prediccion"] == "L" else "visita"
+
+            # Puntos por ganador / marcador exacto
+            if ganador_real and ganador_ap == ganador_real:
+                if gl_ap == goles_local and gv_ap == goles_visita:
+                    pts = EXACT_POINTS
+                else:
+                    pts = WINNER_POINTS
+
+            # Bonus penales: predijo que habría penales Y acertó el equipo
+            if fue_penales and ap["predice_penales"] and equipo_ganador_penales:
+                cur.execute(
+                    "SELECT equipo_local FROM partidos WHERE id = %s", (partido_id,)
+                )
+                eq_local = cur.fetchone()["equipo_local"]
+                gana_real_eq  = equipo_ganador_penales
+                gana_ap_eq    = ap["equipo_penales_pred"]
+                if gana_ap_eq and gana_ap_eq == gana_real_eq:
+                    pts += PENALTY_BONUS
+
+            cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
+    else:
+        cur.execute("SELECT id, prediccion FROM apuestas WHERE id_partido = %s", (partido_id,))
+        real = (
+            "L" if goles_local > goles_visita else
+            "V" if goles_visita > goles_local else
+            "E"
+        )
+        for ap in cur.fetchall():
+            pts = MATCH_POINTS if ap["prediccion"] == real else 0
+            cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
+
+
+def _log_admin(cur, id_admin, accion, detalle):
+    cur.execute(
+        "INSERT INTO auditoria_admin (id_admin, accion, detalle) VALUES (%s, %s, %s)",
+        (id_admin, accion, detalle)
     )
-    for ap in cur.fetchall():
-        pts = 1 if ap["prediccion"] == real else 0
-        cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
+
+
 
 
 @admin_bp.route("/partido", methods=["POST"])
@@ -53,6 +130,9 @@ def crear_partido():
         return jsonify({"error": "Error interno del servidor"}), 500
 
 
+
+
+
 @admin_bp.route("/partido/<int:partido_id>", methods=["PUT"])
 @solo_admin
 def editar_partido(partido_id):
@@ -72,6 +152,9 @@ def editar_partido(partido_id):
     goles_visita   = int(datos.get("goles_visita", 0))
     nombre_estadio = datos.get("nombre_estadio", "")
     tiene_imagen   = "imagen_estadio" in datos
+
+    if finalizado and goles_local == goles_visita and fase not in ("Grupos",) | FASES_EXACTO:
+        return jsonify({"error": "Este partido es de eliminación directa: no puede terminar en empate"}), 400
 
     try:
         conn = get_db()
@@ -112,13 +195,24 @@ def editar_partido(partido_id):
                 prev_gv != goles_visita
             )
             if result_changed:
-                _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
+                cur.execute("SELECT fue_penales, equipo_ganador_penales FROM partidos WHERE id=%s", (partido_id,))
+                pen_row = cur.fetchone()
+                _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita,
+                                        fase=fase,
+                                        fue_penales=pen_row["fue_penales"] if pen_row else False,
+                                        equipo_ganador_penales=pen_row["equipo_ganador_penales"] if pen_row else None)
+                if prev_finalizado:
+                    _log_admin(cur, request.usuario_id, "editar_resultado",
+                        f"Partido #{partido_id}: resultado ya finalizado {prev_gl}-{prev_gv} → "
+                        f"{goles_local}-{goles_visita} (puntos recalculados)")
         elif prev_finalizado:
             # Un-finalizing: remove all points so they don't persist as stale data
             cur.execute(
                 "UPDATE apuestas SET puntos = NULL WHERE id_partido = %s",
                 (partido_id,)
             )
+            _log_admin(cur, request.usuario_id, "anular_resultado",
+                f"Partido #{partido_id}: se quitó 'finalizado' (era {prev_gl}-{prev_gv}), puntos limpiados")
 
         conn.commit()
         cur.close()
@@ -160,14 +254,44 @@ def ingresar_resultado(partido_id):
     try:
         conn = get_db()
         cur  = conn.cursor()
+
+        cur.execute("SELECT fase FROM partidos WHERE id = %s", (partido_id,))
+        partido = cur.fetchone()
+        if not partido:
+            cur.close(); conn.close()
+            return jsonify({"error": "Partido no encontrado"}), 404
+
+        fase = partido["fase"]
+
+        # Empate solo permitido en Grupos o fases QF+ (donde puede haber penales)
+        if goles_local == goles_visita and fase not in ("Grupos",) | FASES_EXACTO:
+            cur.close(); conn.close()
+            return jsonify({"error": "Este partido es de eliminación directa: no puede terminar en empate"}), 400
+
+        # Datos de penales — obligatorios para QF+ cuando hay empate
+        fue_penales            = bool(datos.get("fue_penales", False))
+        equipo_ganador_penales = (datos.get("equipo_ganador_penales") or "").strip() or None
+
+        if fase in FASES_EXACTO and goles_local == goles_visita:
+            if not fue_penales or not equipo_ganador_penales:
+                cur.close(); conn.close()
+                return jsonify({"error": "Partido empatado en QF+: indica fue_penales=true y equipo_ganador_penales"}), 400
+
         cur.execute(
-            "UPDATE partidos SET goles_local=%s, goles_visita=%s, finalizado=TRUE WHERE id=%s",
-            (goles_local, goles_visita, partido_id)
+            """UPDATE partidos
+                  SET goles_local=%s, goles_visita=%s, finalizado=TRUE,
+                      fue_penales=%s, equipo_ganador_penales=%s
+                WHERE id=%s""",
+            (goles_local, goles_visita, fue_penales, equipo_ganador_penales, partido_id)
         )
         if cur.rowcount == 0:
             cur.close(); conn.close()
             return jsonify({"error": "Partido no encontrado"}), 404
-        _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita)
+
+        _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita,
+                                fase=fase,
+                                fue_penales=fue_penales,
+                                equipo_ganador_penales=equipo_ganador_penales)
         conn.commit()
         cur.close()
         conn.close()
@@ -187,6 +311,24 @@ def _notificar_resultado(partido_id):
         print(f"[admin] _notificar_resultado: {e}")
 
 
+def _definir_resultado_podio(campo, campo_puntos, puntos, equipo_real):
+    conn = get_db()
+    cur  = conn.cursor()
+    try:
+        cur.execute(
+            f"UPDATE apuesta_campeon SET {campo_puntos}=%s WHERE LOWER({campo})=LOWER(%s)",
+            (puntos, equipo_real)
+        )
+        cur.execute(
+            f"UPDATE apuesta_campeon SET {campo_puntos}=0 WHERE LOWER({campo})!=LOWER(%s)",
+            (equipo_real,)
+        )
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+
 @admin_bp.route("/campeon-real", methods=["PUT"])
 @solo_admin
 def definir_campeon_real():
@@ -195,20 +337,36 @@ def definir_campeon_real():
     if not campeon_real:
         return jsonify({"error": "Debes indicar el campeón"}), 400
     try:
-        conn = get_db()
-        cur  = conn.cursor()
-        cur.execute(
-            "UPDATE apuesta_campeon SET puntos_campeon=%s WHERE LOWER(campeon)=LOWER(%s)",
-            (CHAMPION_POINTS, campeon_real)
-        )
-        cur.execute(
-            "UPDATE apuesta_campeon SET puntos_campeon=0 WHERE LOWER(campeon)!=LOWER(%s)",
-            (campeon_real,)
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
+        _definir_resultado_podio("campeon", "puntos_campeon", CHAMPION_POINTS, campeon_real)
         return jsonify({"mensaje": f"Campeón {campeon_real} registrado. Puntos asignados."})
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/segundo-real", methods=["PUT"])
+@solo_admin
+def definir_segundo_real():
+    datos  = request.get_json()
+    equipo = datos.get("equipo")
+    if not equipo:
+        return jsonify({"error": "Debes indicar el 2do lugar"}), 400
+    try:
+        _definir_resultado_podio("segundo_lugar", "puntos_segundo", SECOND_POINTS, equipo)
+        return jsonify({"mensaje": f"2do lugar {equipo} registrado. Puntos asignados."})
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/tercero-real", methods=["PUT"])
+@solo_admin
+def definir_tercero_real():
+    datos  = request.get_json()
+    equipo = datos.get("equipo")
+    if not equipo:
+        return jsonify({"error": "Debes indicar el 3er lugar"}), 400
+    try:
+        _definir_resultado_podio("tercer_lugar", "puntos_tercero", THIRD_POINTS, equipo)
+        return jsonify({"mensaje": f"3er lugar {equipo} registrado. Puntos asignados."})
     except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
@@ -335,8 +493,11 @@ def ver_apuestas():
                    p.bandera_local, p.bandera_visita,
                    p.fecha, p.fase, p.grupo,
                    p.goles_local AS resultado_local, p.goles_visita AS resultado_visita,
+                   p.fue_penales, p.equipo_ganador_penales,
                    p.finalizado,
-                   a.prediccion, a.puntos, a.intentos
+                   a.prediccion, a.puntos, a.intentos,
+                   a.goles_local_apostado, a.goles_visita_apostado,
+                   a.predice_penales, a.equipo_penales_pred
             FROM apuestas a
             JOIN usuarios u ON u.id = a.id_usuario
             JOIN partidos p ON p.id = a.id_partido
@@ -346,6 +507,93 @@ def ver_apuestas():
         cur.close()
         conn.close()
         return jsonify([dict(r) for r in rows])
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/apuesta", methods=["PUT"])
+@solo_admin
+def admin_set_apuesta():
+    datos      = request.get_json(silent=True) or {}
+    id_usuario = datos.get("id_usuario")
+    id_partido = datos.get("id_partido")
+    prediccion = datos.get("prediccion")
+
+    if not id_usuario or not id_partido or prediccion not in ("L", "E", "V"):
+        return jsonify({"error": "Se requiere id_usuario, id_partido y prediccion (L/E/V)"}), 400
+
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+
+        cur.execute(
+            "SELECT finalizado, goles_local, goles_visita, fecha, fase FROM partidos WHERE id = %s",
+            (id_partido,)
+        )
+        partido = cur.fetchone()
+        if not partido:
+            cur.close(); conn.close()
+            return jsonify({"error": "Partido no encontrado"}), 404
+        if prediccion == "E" and partido["fase"] != "Grupos":
+            cur.close(); conn.close()
+            return jsonify({"error": "Este partido es de eliminación directa: no hay empate, elige Local o Visita"}), 400
+        if partido["finalizado"]:
+            limite = partido["fecha"] + timedelta(days=VOTO_ADMIN_GRACIA_DIAS)
+            if chile_now() > limite:
+                cur.close(); conn.close()
+                return jsonify({"error": f"No se puede editar: pasaron más de {VOTO_ADMIN_GRACIA_DIAS} días desde que finalizó el partido"}), 400
+
+        cur.execute(
+            "SELECT id, prediccion FROM apuestas WHERE id_usuario = %s AND id_partido = %s",
+            (id_usuario, id_partido)
+        )
+        existing = cur.fetchone()
+        if existing:
+            cur.execute(
+                "UPDATE apuestas SET prediccion = %s WHERE id = %s",
+                (prediccion, existing["id"])
+            )
+        else:
+            cur.execute(
+                "INSERT INTO apuestas (id_usuario, id_partido, prediccion, intentos, puntos)"
+                " VALUES (%s, %s, %s, 1, 0)",
+                (id_usuario, id_partido, prediccion)
+            )
+
+        if partido["finalizado"]:
+            _asignar_puntos_partido(cur, id_partido, partido["goles_local"], partido["goles_visita"])
+
+        prev_pred = existing["prediccion"] if existing else "(sin voto)"
+        detalle_extra = " (partido ya finalizado, puntos recalculados)" if partido["finalizado"] else ""
+        _log_admin(cur, request.usuario_id, "editar_voto",
+            f"Usuario #{id_usuario}, partido #{id_partido}: {prev_pred} → {prediccion}{detalle_extra}")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Voto guardado correctamente"})
+    except Exception:
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@admin_bp.route("/auditoria", methods=["GET"])
+@solo_admin
+def ver_auditoria():
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("""
+            SELECT a.id, a.accion, a.detalle, a.creado_en,
+                   COALESCE(u.nombre, '(usuario eliminado)') AS admin_nombre
+            FROM auditoria_admin a
+            LEFT JOIN usuarios u ON u.id = a.id_admin
+            ORDER BY a.creado_en DESC
+            LIMIT 200
+        """)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify([row_as_dict(r) for r in rows])
     except Exception:
         return jsonify({"error": "Error interno del servidor"}), 500
 
