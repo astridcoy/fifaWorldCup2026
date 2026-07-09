@@ -68,6 +68,7 @@ function _actualizarPodioUI(controlsId, valor, intentos) {
     if (btn) {
       btn.className = "btn-podio-cambiar";
       btn.innerHTML = `<i class="bi bi-pencil me-1"></i> Cambiar`;
+      btn.dataset.modo = "cambiar";
     }
     // Insert attempt dots if not already there
     if (!el.querySelector(".attempt-dots")) {
@@ -95,6 +96,14 @@ async function cargarMiCampeon() {
 
 function _setupBtnPodio(btnId, sel, controlsId, endpoint, bodyKey, etiqueta) {
   document.getElementById(btnId).addEventListener("click", async () => {
+    const btn = document.getElementById(btnId);
+    // First click in "cambiar" mode: enter edit mode, don't call API yet
+    if (btn && btn.dataset.modo === "cambiar") {
+      btn.dataset.modo = "guardar";
+      sel.value = "";
+      btn.innerHTML = `<i class="bi bi-floppy me-1"></i> Guardar`;
+      return;
+    }
     const valor = sel.value;
     if (!valor) { toast("Selecciona un equipo primero", "error"); return; }
     try {
