@@ -595,7 +595,7 @@ function _scoringLegend(fase) {
   if (FASES_EXACTO.has(fase)) {
     return `<div class="scoring-legend mt-2">
       <i class="bi bi-info-circle me-1"></i>
-      <span>Ganador correcto = <b>2 pts</b> · Marcador exacto = <b>6 pts</b> · Penales acertados = <b>+2 pts</b> · Máx <b>8 pts</b></span>
+      <span>Ganador correcto = <b>3 pts</b> · Marcador exacto = <b>6 pts</b> · Penales acertados = <b>+2 pts</b> · Máx <b>8 pts</b></span>
     </div>`;
   }
   return `<div class="scoring-legend mt-2">
@@ -627,7 +627,7 @@ function _puntosDesglose(p) {
     if (acertoExacto) {
       rows.push(`<div class="pts-row pts-ok">✓ Marcador exacto · <b>+6 pts</b></div>`);
     } else if (acertoGanador) {
-      rows.push(`<div class="pts-row pts-ok">✓ Ganador correcto · <b>+2 pts</b></div>`);
+      rows.push(`<div class="pts-row pts-ok">✓ Ganador correcto · <b>+3 pts</b></div>`);
       rows.push(`<div class="pts-row pts-ko">✗ Marcador incorrecto</div>`);
     } else {
       rows.push(`<div class="pts-row pts-ko">✗ Ganador incorrecto · 0 pts</div>`);

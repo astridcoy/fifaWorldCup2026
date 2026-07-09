@@ -8,6 +8,6 @@ VOTO_ADMIN_GRACIA_DIAS = 7
 
 # Fases con apuesta de marcador exacto + predicción de penales
 FASES_EXACTO    = {"Cuartos", "Semifinal", "Final", "Tercer puesto"}
-WINNER_POINTS   = 2   # ganador correcto
+WINNER_POINTS   = 3   # ganador correcto
 EXACT_POINTS    = 6   # marcador 90-min exacto + ganador correcto
 PENALTY_BONUS   = 2   # predijo penales + equipo que avanza correcto
