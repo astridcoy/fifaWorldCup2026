@@ -4,7 +4,32 @@ const selCampeon = document.getElementById("sel-campeon");
 const selSegundo = document.getElementById("sel-segundo");
 const selTercero = document.getElementById("sel-tercero");
 
+let _equiposActivos = [];
+const _podioActual  = { campeon: "", segundo: "", tercero: "" };
+const _CONTROLS_KEY = { "controls-campeon": "campeon", "controls-segundo": "segundo", "controls-tercero": "tercero" };
+
+function _refiltrarSelectPodio() {
+  const elegidos = new Set(Object.values(_podioActual).filter(Boolean));
+  [
+    { sel: selCampeon, propia: _podioActual.campeon },
+    { sel: selSegundo, propia: _podioActual.segundo },
+    { sel: selTercero, propia: _podioActual.tercero },
+  ].forEach(({ sel, propia }) => {
+    if (!document.body.contains(sel)) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Elige un país —</option>';
+    _equiposActivos.forEach(eq => {
+      if (elegidos.has(eq) && eq !== propia) return;
+      const opt = document.createElement("option");
+      opt.value = eq; opt.textContent = eq;
+      sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+  });
+}
+
 function _llenarSelectPodio(equipos) {
+  _equiposActivos = equipos;
   [selCampeon, selSegundo, selTercero].forEach(sel => {
     const prevVal = sel.value;
     sel.innerHTML = '<option value="">— Elige un país —</option>';
@@ -49,6 +74,9 @@ function estaEnVivo(partido) {
 const MAX_PODIO_INTENTOS = 2;
 
 function _actualizarPodioUI(controlsId, valor, intentos) {
+  const key = _CONTROLS_KEY[controlsId];
+  if (key && valor) _podioActual[key] = valor;
+
   const el = document.getElementById(controlsId);
   if (!el) return;
   if (intentos >= MAX_PODIO_INTENTOS) {
@@ -58,6 +86,7 @@ function _actualizarPodioUI(controlsId, valor, intentos) {
         <i class="bi bi-lock-fill"></i>
         <span><strong>${escHtml(valor)}</strong> · <span style="color:var(--red)">2/2 intentos usados</span></span>
       </div>`;
+    _refiltrarSelectPodio();
     return;
   }
   if (intentos > 0 && valor) {
@@ -81,6 +110,7 @@ function _actualizarPodioUI(controlsId, valor, intentos) {
         <span style="font-size:.7rem;color:var(--text-sub);margin-left:.3rem">1/2 intentos · voto actual: <strong>${escHtml(valor)}</strong></span>`;
       el.insertBefore(dots, el.firstChild);
     }
+    _refiltrarSelectPodio();
   }
 }
 
@@ -595,7 +625,7 @@ function _scoringLegend(fase) {
   if (FASES_EXACTO.has(fase)) {
     return `<div class="scoring-legend mt-2">
       <i class="bi bi-info-circle me-1"></i>
-      <span>Ganador correcto = <b>3 pts</b> · Marcador exacto = <b>6 pts</b> · Penales acertados = <b>+2 pts</b> · Máx <b>8 pts</b></span>
+      <span>Ganador correcto = <b>3 pts</b> · Marcador exacto = <b>6 pts</b> · Penales acertados = <b>2 pts</b> </span>
     </div>`;
   }
   return `<div class="scoring-legend mt-2">
