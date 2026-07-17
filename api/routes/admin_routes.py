@@ -17,18 +17,26 @@ def _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita,
 
     Fases clásicas (Grupos/Dieciseisavos/Octavos): L/E/V → MATCH_POINTS o 0.
     Fases QF+ (Cuartos/Semifinal/Tercer puesto/Final): marcador exacto + bonus penales.
-      - Ganador correcto          → WINNER_POINTS  (2)
+      - Ganador correcto          → WINNER_POINTS  (3)
       - Marcador 90-min exacto    → EXACT_POINTS   (6, incluye ganador)
       - Predijo penales + equipo  → +PENALTY_BONUS (2)
     """
     if fase in FASES_EXACTO:
-        # Determinar ganador real
+        # Fetch equipo_local once — needed for tie-breaking comparisons inside the loop
+        cur.execute("SELECT equipo_local FROM partidos WHERE id = %s", (partido_id,))
+        eq_local = cur.fetchone()["equipo_local"]
+
+        # Determine real winner
         if goles_local > goles_visita:
             ganador_real = "local"
         elif goles_visita > goles_local:
             ganador_real = "visita"
         else:
-            ganador_real = "local" if equipo_ganador_penales and fue_penales else None
+            # Draw at 90 min — winner determined by penalty shootout
+            if fue_penales and equipo_ganador_penales:
+                ganador_real = "local" if equipo_ganador_penales == eq_local else "visita"
+            else:
+                ganador_real = None
 
         cur.execute("""
             SELECT id, prediccion,
@@ -41,39 +49,28 @@ def _asignar_puntos_partido(cur, partido_id, goles_local, goles_visita,
             gl_ap = ap["goles_local_apostado"]
             gv_ap = ap["goles_visita_apostado"]
 
-            # Derivar ganador apostado
+            # Derive predicted winner
             if gl_ap is not None and gv_ap is not None:
                 if gl_ap > gv_ap:
                     ganador_ap = "local"
                 elif gv_ap > gl_ap:
                     ganador_ap = "visita"
                 else:
-                    # empate en marcador → el ganador viene del equipo de penales apostado
-                    cur.execute(
-                        "SELECT equipo_local FROM partidos WHERE id = %s", (partido_id,)
-                    )
-                    eq_local = cur.fetchone()["equipo_local"]
                     ganador_ap = "local" if ap["equipo_penales_pred"] == eq_local else "visita"
             else:
-                # Apuesta vieja sin marcador exacto (solo prediccion L/V)
+                # Legacy bet without exact score (only prediccion L/V)
                 ganador_ap = "local" if ap["prediccion"] == "L" else "visita"
 
-            # Puntos por ganador / marcador exacto
+            # Points for correct winner / exact score
             if ganador_real and ganador_ap == ganador_real:
                 if gl_ap == goles_local and gv_ap == goles_visita:
                     pts = EXACT_POINTS
                 else:
                     pts = WINNER_POINTS
 
-            # Bonus penales: predijo que habría penales Y acertó el equipo
+            # Penalty bonus: predicted shootout AND correct team
             if fue_penales and ap["predice_penales"] and equipo_ganador_penales:
-                cur.execute(
-                    "SELECT equipo_local FROM partidos WHERE id = %s", (partido_id,)
-                )
-                eq_local = cur.fetchone()["equipo_local"]
-                gana_real_eq  = equipo_ganador_penales
-                gana_ap_eq    = ap["equipo_penales_pred"]
-                if gana_ap_eq and gana_ap_eq == gana_real_eq:
+                if ap["equipo_penales_pred"] and ap["equipo_penales_pred"] == equipo_ganador_penales:
                     pts += PENALTY_BONUS
 
             cur.execute("UPDATE apuestas SET puntos=%s WHERE id=%s", (pts, ap["id"]))
@@ -527,7 +524,7 @@ def admin_set_apuesta():
         cur  = conn.cursor()
 
         cur.execute(
-            "SELECT finalizado, goles_local, goles_visita, fecha, fase FROM partidos WHERE id = %s",
+            "SELECT finalizado, goles_local, goles_visita, fecha, fase, fue_penales, equipo_ganador_penales FROM partidos WHERE id = %s",
             (id_partido,)
         )
         partido = cur.fetchone()
@@ -561,7 +558,12 @@ def admin_set_apuesta():
             )
 
         if partido["finalizado"]:
-            _asignar_puntos_partido(cur, id_partido, partido["goles_local"], partido["goles_visita"])
+            _asignar_puntos_partido(
+                cur, id_partido, partido["goles_local"], partido["goles_visita"],
+                fase=partido["fase"],
+                fue_penales=partido["fue_penales"] or False,
+                equipo_ganador_penales=partido["equipo_ganador_penales"],
+            )
 
         prev_pred = existing["prediccion"] if existing else "(sin voto)"
         detalle_extra = " (partido ya finalizado, puntos recalculados)" if partido["finalizado"] else ""
