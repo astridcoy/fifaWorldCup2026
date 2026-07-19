@@ -311,14 +311,17 @@ def _notificar_resultado(partido_id):
 def _definir_resultado_podio(campo, campo_puntos, puntos, equipo_real):
     conn = get_db()
     cur  = conn.cursor()
+    # Match on name only, ignoring any leading emoji prefix stored in the column.
+    # e.g. admin types "España" → matches stored "🇪🇸 España" via LIKE.
+    pat = f"%{equipo_real}%"
     try:
         cur.execute(
-            f"UPDATE apuesta_campeon SET {campo_puntos}=%s WHERE LOWER({campo})=LOWER(%s)",
-            (puntos, equipo_real)
+            f"UPDATE apuesta_campeon SET {campo_puntos}=%s WHERE {campo} ILIKE %s",
+            (puntos, pat)
         )
         cur.execute(
-            f"UPDATE apuesta_campeon SET {campo_puntos}=0 WHERE LOWER({campo})!=LOWER(%s)",
-            (equipo_real,)
+            f"UPDATE apuesta_campeon SET {campo_puntos}=0 WHERE ({campo} NOT ILIKE %s OR {campo} IS NULL)",
+            (pat,)
         )
         conn.commit()
     finally:
